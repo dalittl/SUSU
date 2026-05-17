@@ -163,35 +163,57 @@ struct HomeView: View {
             HomeSection(title: "Pool Insights")
             HStack(alignment: .top, spacing: 14) {
                 // Left — Donut: pool distribution
-                VStack(alignment: .leading, spacing: 8) {
+                VStack(alignment: .leading, spacing: 10) {
                     Text("Distribution")
                         .font(.caption).bold()
                         .foregroundColor(.secondary)
-                    Chart(appState.groups) { group in
-                        SectorMark(
-                            angle: .value("Pool", group.poolBalance),
-                            innerRadius: .ratio(0.55),
-                            angularInset: 2
-                        )
-                        .foregroundStyle(by: .value("Group", group.name))
-                        .cornerRadius(4)
-                    }
-                    .chartForegroundStyleScale([
-                        appState.groups.indices.contains(0) ? appState.groups[0].name : "": theme.primary,
-                        appState.groups.indices.contains(1) ? appState.groups[1].name : "": theme.secondary,
-                        appState.groups.indices.contains(2) ? appState.groups[2].name : "": theme.accent,
-                    ])
-                    .chartLegend(position: .bottom, alignment: .leading, spacing: 6)
-                    .chartLegend(.visible)
-                    .frame(height: 130)
-                    .overlay {
-                        VStack(spacing: 2) {
+
+                    ZStack {
+                        Chart(appState.groups) { group in
+                            SectorMark(
+                                angle: .value("Pool", group.poolBalance),
+                                innerRadius: .ratio(0.58),
+                                angularInset: 2
+                            )
+                            .foregroundStyle(by: .value("Group", group.name))
+                            .cornerRadius(4)
+                        }
+                        .chartForegroundStyleScale([
+                            appState.groups.indices.contains(0) ? appState.groups[0].name : "": theme.primary,
+                            appState.groups.indices.contains(1) ? appState.groups[1].name : "": theme.secondary,
+                            appState.groups.indices.contains(2) ? appState.groups[2].name : "": theme.accent,
+                        ])
+                        .chartLegend(.hidden)
+                        .frame(height: 120)
+
+                        VStack(spacing: 1) {
                             Text(appState.totalPoolBalance.asCurrency)
-                                .font(.system(size: 13, weight: .black))
+                                .font(.system(size: 12, weight: .black))
                                 .foregroundColor(theme.primary)
                             Text("total")
                                 .font(.system(size: 9))
                                 .foregroundColor(.secondary)
+                        }
+                    }
+
+                    // Custom legend
+                    VStack(alignment: .leading, spacing: 4) {
+                        ForEach(appState.groups.indices, id: \.self) { i in
+                            let group = appState.groups[i]
+                            let colors: [Color] = [theme.primary, theme.secondary, theme.accent]
+                            HStack(spacing: 6) {
+                                Circle()
+                                    .fill(colors[i % colors.count])
+                                    .frame(width: 7, height: 7)
+                                Text(group.name)
+                                    .font(.system(size: 10))
+                                    .foregroundColor(.secondary)
+                                    .lineLimit(1)
+                                Spacer()
+                                Text(group.poolBalance.asCurrency)
+                                    .font(.system(size: 10, weight: .semibold))
+                                    .foregroundColor(.primary)
+                            }
                         }
                     }
                 }
