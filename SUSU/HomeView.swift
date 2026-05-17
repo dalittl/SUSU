@@ -4,6 +4,7 @@
 //
 
 import SwiftUI
+import Charts
 
 struct HomeView: View {
     @EnvironmentObject var appState: AppState
@@ -13,7 +14,6 @@ struct HomeView: View {
     @State private var showWithdraw = false
     @State private var showInvite = false
     @State private var walletVisible = false
-    @State private var selectedGroupIndex = 0
 
     var body: some View {
         NavigationStack {
@@ -27,7 +27,7 @@ struct HomeView: View {
 
                         VStack(spacing: 22) {
                             quickActions
-                            groupCarousel
+                            chartsDashboard
                             recentActivitySection
                             Spacer(minLength: 40)
                         }
@@ -156,24 +156,145 @@ struct HomeView: View {
         }
     }
 
-    // MARK: - Attention Banner
+    // MARK: - Charts Dashboard
 
-    // MARK: - Group Carousel
-
-    var groupCarousel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HomeSection(title: "Your Groups", count: appState.groups.count)
-
-            TabView(selection: $selectedGroupIndex) {
-                ForEach(appState.groups.indices, id: \.self) { i in
-                    GroupPoolCard(group: appState.groups[i], theme: theme)
-                        .tag(i)
-                        .padding(.horizontal, 2)
-                        .padding(.bottom, 12)
+    var chartsDashboard: some View {
+        VStack(spacing: 14) {
+            HomeSection(title: "Pool Insights")
+            HStack(alignment: .top, spacing: 14) {
+                // Left — Donut: pool distribution
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Distribution")
+                        .font(.caption).bold()
+                        .foregroundColor(.secondary)
+                    Chart(appState.groups) { group in
+                        SectorMark(
+                            angle: .value("Pool", group.poolBalance),
+                            innerRadius: .ratio(0.55),
+                            angularInset: 2
+                        )
+                        .foregroundStyle(by: .value("Group", group.name))
+                        .cornerRadius(4)
+                    }
+                    .chartForegroundStyleScale([
+                        appState.groups.indices.contains(0) ? appState.groups[0].name : "": theme.primary,
+                        appState.groups.indices.contains(1) ? appState.groups[1].name : "": theme.secondary,
+                        appState.groups.indices.contains(2) ? appState.groups[2].name : "": theme.accent,
+                    ])
+                    .chartLegend(position: .bottom, alignment: .leading, spacing: 6)
+                    .chartLegend(.visible)
+                    .frame(height: 130)
+                    .overlay {
+                        VStack(spacing: 2) {
+                            Text(appState.totalPoolBalance.asCurrency)
+                                .font(.system(size: 13, weight: .black))
+                                .foregroundColor(theme.primary)
+                            Text("total")
+                                .font(.system(size: 9))
+                                .foregroundColor(.secondary)
+                        }
+                    }
                 }
+                .padding(14)
+                .background(theme.cardBackground)
+                .cornerRadius(18)
+                .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
+                .frame(maxWidth: .infinity)
+
+                // Right — Bar: monthly contributions
+                VStack(alignment: .leading, spacing: 8) {
+                    Text("Contributions")
+                        .font(.caption).bold()
+                        .foregroundColor(.secondary)
+                    let months = ["D", "J", "F", "M", "A", "M"]
+                    let values = appState.currentUser.monthlyContributions
+                    Chart(Array(zip(months, values)), id: \.0) { month, val in
+                        BarMark(
+                            x: .value("Month", month),
+                            y: .value("Amount", val)
+                        )
+                        .foregroundStyle(
+                            LinearGradient(colors: [theme.primary, theme.secondary],
+                                           startPoint: .bottom, endPoint: .top)
+                        )
+                        .cornerRadius(5)
+                        .annotation(position: .top) {
+                            if val == (values.max() ?? 0) {
+                                Image(systemName: "star.fill")
+                                    .font(.system(size: 7))
+                                    .foregroundColor(theme.accent)
+                            }
+                        }
+                    }
+                    .chartYAxis(.hidden)
+                    .chartXAxis {
+                        AxisMarks(values: .automatic) { _ in
+                            AxisValueLabel().font(.system(size: 9))
+                        }
+                    }
+                    .frame(height: 130)
+                }
+                .padding(14)
+                .background(theme.cardBackground)
+                .cornerRadius(18)
+                .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
+                .frame(maxWidth: .infinity)
             }
-            .tabViewStyle(.page(indexDisplayMode: .automatic))
-            .frame(height: 185)
+
+            // Full-width line chart — 6-month wallet growth
+            VStack(alignment: .leading, spacing: 8) {
+                HStack {
+                    Text("Savings Growth")
+                        .font(.caption).bold()
+                        .foregroundColor(.secondary)
+                    Spacer()
+                    Text("6 months")
+                        .font(.caption2)
+                        .foregroundColor(.secondary.opacity(0.7))
+                }
+                let months = ["Dec", "Jan", "Feb", "Mar", "Apr", "May"]
+                let values = appState.currentUser.monthlyContributions
+                let cumulative: [Double] = values.indices.map { i in
+                    values[0...i].reduce(0, +)
+                }
+                Chart(Array(zip(months, cumulative)), id: \.0) { month, val in
+                    AreaMark(
+                        x: .value("Month", month),
+                        y: .value("Saved", val)
+                    )
+                    .foregroundStyle(
+                        LinearGradient(
+                            colors: [theme.primary.opacity(0.35), theme.primary.opacity(0.0)],
+                            startPoint: .top, endPoint: .bottom
+                        )
+                    )
+                    .interpolationMethod(.catmullRom)
+                    LineMark(
+                        x: .value("Month", month),
+                        y: .value("Saved", val)
+                    )
+                    .foregroundStyle(theme.primary)
+                    .lineStyle(StrokeStyle(lineWidth: 2.5))
+                    .interpolationMethod(.catmullRom)
+                    PointMark(
+                        x: .value("Month", month),
+                        y: .value("Saved", val)
+                    )
+                    .foregroundStyle(theme.primary)
+                    .symbolSize(30)
+                }
+                .chartYAxis(.hidden)
+                .chartXAxis {
+                    AxisMarks(values: .automatic) { _ in
+                        AxisValueLabel().font(.system(size: 10))
+                    }
+                }
+                .frame(height: 90)
+            }
+            .padding(14)
+            .background(theme.cardBackground)
+            .cornerRadius(18)
+            .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
         }
     }
 
@@ -273,95 +394,6 @@ struct HomeActionTile: View {
             .scaleEffect(pressed ? 0.9 : 1.0)
         }
         .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Group Pool Card
-
-struct GroupPoolCard: View {
-    let group: SUSUGroup
-    let theme: AppTheme
-
-    var body: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 20)
-                .fill(LinearGradient(
-                    colors: [theme.primary.opacity(0.85), theme.secondary.opacity(0.85)],
-                    startPoint: .topLeading, endPoint: .bottomTrailing
-                ))
-                .shadow(color: theme.primary.opacity(0.25), radius: 10, x: 0, y: 6)
-
-            // Decorative blob
-            Circle()
-                .fill(.white.opacity(0.07))
-                .frame(width: 140, height: 140)
-                .offset(x: 90, y: -30)
-
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(group.emoji)
-                            .font(.system(size: 30))
-                        Text(group.name)
-                            .font(.headline).bold()
-                            .foregroundColor(.white)
-                    }
-                    Spacer()
-                    if group.isPlusGroup {
-                        Text("PLUS")
-                            .font(.caption2).bold()
-                            .foregroundColor(theme.primary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(.white)
-                            .cornerRadius(8)
-                    }
-                }
-
-                Spacer()
-
-                VStack(alignment: .leading, spacing: 6) {
-                    Text("POOL BALANCE")
-                        .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.white.opacity(0.7))
-                        .tracking(1)
-                    Text(group.poolBalance.asCurrency)
-                        .font(.system(size: 28, weight: .black))
-                        .foregroundColor(.white)
-                }
-
-                Spacer(minLength: 10)
-
-                HStack {
-                    // Member avatars
-                    HStack(spacing: -8) {
-                        ForEach(group.members.prefix(4)) { member in
-                            Circle()
-                                .fill(Color(hex: member.colorHex))
-                                .frame(width: 26, height: 26)
-                                .overlay(
-                                    Text(member.initials.prefix(2))
-                                        .font(.system(size: 8, weight: .bold))
-                                        .foregroundColor(.white)
-                                )
-                                .overlay(Circle().stroke(.white, lineWidth: 1.5))
-                        }
-                        if group.members.count > 4 {
-                            Circle()
-                                .fill(.white.opacity(0.3))
-                                .frame(width: 26, height: 26)
-                                .overlay(Text("+\(group.members.count - 4)").font(.system(size: 8, weight: .bold)).foregroundColor(.white))
-                                .overlay(Circle().stroke(.white, lineWidth: 1.5))
-                        }
-                    }
-                    Spacer()
-                    Text("\(group.members.count) members")
-                        .font(.caption)
-                        .foregroundColor(.white.opacity(0.8))
-                }
-            }
-            .padding(18)
-        }
     }
 }
 
