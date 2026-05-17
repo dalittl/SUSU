@@ -36,32 +36,20 @@ struct HomeView: View {
                 }
             }
             .navigationBarHidden(true)
-            .sheet(isPresented: $showContribute) {
+            .popupCard(isPresented: $showContribute) {
                 ContributeSheetView(theme: theme)
                     .environmentObject(appState)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
-            .sheet(isPresented: $showPropose) {
+            .popupCard(isPresented: $showPropose) {
                 NewProposalView(theme: theme, groups: appState.groups)
                     .environmentObject(appState)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
-            .sheet(isPresented: $showWithdraw) {
+            .popupCard(isPresented: $showWithdraw) {
                 WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance)
                     .environmentObject(appState)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
-            .sheet(isPresented: $showInvite) {
+            .popupCard(isPresented: $showInvite) {
                 InviteView(theme: theme)
-                    .presentationDetents([.fraction(0.65)])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
             .onAppear {
                 withAnimation(.spring(response: 0.7, dampingFraction: 0.8).delay(0.2)) {
@@ -734,69 +722,70 @@ struct InviteView: View {
     let inviteLink = "https://susu.app/invite/DL-ABC123"
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 24) {
-                Image(systemName: "person.badge.plus")
-                    .font(.system(size: 64))
-                    .foregroundColor(theme.primary)
-                    .padding(.top, 30)
-
-                Text("Invite Someone")
-                    .font(.title2).bold()
-
-                Text("Share this link to bring someone into one of your SUSU groups.")
-                    .font(.subheadline).foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                HStack {
-                    Text(inviteLink)
-                        .font(.caption)
-                        .foregroundColor(theme.primary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                    Spacer()
-                    Button {
-                        UIPasteboard.general.string = inviteLink
-                        withAnimation { copied = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
-                            withAnimation { copied = false }
-                        }
-                    } label: {
-                        Text(copied ? "Copied!" : "Copy")
-                            .font(.caption).bold()
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 10).padding(.vertical, 6)
-                            .background(copied ? theme.secondary : theme.primary)
-                            .cornerRadius(8)
-                    }
-                }
-                .padding()
-                .background(theme.primary.opacity(0.07))
-                .cornerRadius(12)
-                .padding(.horizontal)
-
-                ShareLink(item: inviteLink) {
-                    Label("Share Link", systemImage: "square.and.arrow.up")
-                        .font(.headline).bold()
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(theme.primary)
-                        .cornerRadius(16)
-                }
-                .padding(.horizontal)
-
+        VStack(spacing: 24) {
+            // Card header
+            HStack {
+                Button("Done") { dismiss() }.hidden()
                 Spacer()
+                Text("Invite")
+                    .font(.headline).bold()
+                Spacer()
+                Button("Done") { dismiss() }
+                    .foregroundColor(theme.primary)
             }
-            .navigationTitle("Invite")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(theme.primary)
+            .padding(.horizontal)
+            .padding(.top, 20)
+
+            Image(systemName: "person.badge.plus")
+                .font(.system(size: 64))
+                .foregroundColor(theme.primary)
+
+            Text("Invite Someone")
+                .font(.title2).bold()
+
+            Text("Share this link to bring someone into one of your SUSU groups.")
+                .font(.subheadline).foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            HStack {
+                Text(inviteLink)
+                    .font(.caption)
+                    .foregroundColor(theme.primary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                Spacer()
+                Button {
+                    UIPasteboard.general.string = inviteLink
+                    withAnimation { copied = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                        withAnimation { copied = false }
+                    }
+                } label: {
+                    Text(copied ? "Copied!" : "Copy")
+                        .font(.caption).bold()
+                        .foregroundColor(.white)
+                        .padding(.horizontal, 10).padding(.vertical, 6)
+                        .background(copied ? theme.secondary : theme.primary)
+                        .cornerRadius(8)
                 }
             }
+            .padding()
+            .background(theme.primary.opacity(0.07))
+            .cornerRadius(12)
+            .padding(.horizontal)
+
+            ShareLink(item: inviteLink) {
+                Label("Share Link", systemImage: "square.and.arrow.up")
+                    .font(.headline).bold()
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(theme.primary)
+                    .cornerRadius(16)
+            }
+            .padding(.horizontal)
+            .padding(.bottom, 20)
         }
     }
 }

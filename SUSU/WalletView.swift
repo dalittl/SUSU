@@ -44,19 +44,13 @@ struct WalletView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showContributeSheet) {
+            .popupCard(isPresented: $showContributeSheet) {
                 ContributeSheetView(theme: theme)
                     .environmentObject(appState)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
-            .sheet(isPresented: $showWithdrawSheet) {
+            .popupCard(isPresented: $showWithdrawSheet) {
                 WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance)
                     .environmentObject(appState)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
         }
     }
@@ -232,78 +226,82 @@ struct ContributeSheetView: View {
     var parsedAmount: Double { Double(amount) ?? 0 }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 20) {
-                Text(parsedAmount > 0 ? parsedAmount.asCurrency : "$0.00")
-                    .font(.system(size: 52, weight: .black))
-                    .foregroundColor(parsedAmount > 0 ? theme.primary : .secondary)
+        VStack(spacing: 20) {
+            // Card header
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .foregroundColor(theme.primary)
+                Spacer()
+                Text("Contribute")
+                    .font(.headline).bold()
+                Spacer()
+                Button("Cancel") { dismiss() }.hidden()
+            }
+            .padding(.horizontal)
+            .padding(.top, 20)
 
-                Picker("", selection: $selectedType) {
-                    Text("One-Time").tag(0)
-                    Text("Monthly").tag(1)
-                }
-                .pickerStyle(.segmented)
-                .padding(.horizontal)
+            Text(parsedAmount > 0 ? parsedAmount.asCurrency : "$0.00")
+                .font(.system(size: 52, weight: .black))
+                .foregroundColor(parsedAmount > 0 ? theme.primary : .secondary)
 
-                if appState.groups.count > 1 {
-                    HStack {
-                        Text("Group:")
-                            .font(.subheadline).foregroundColor(.secondary)
-                        Picker("Group", selection: $selectedGroupIndex) {
-                            ForEach(appState.groups.indices, id: \.self) { i in
-                                Text("\(appState.groups[i].emoji) \(appState.groups[i].name)").tag(i)
-                            }
+            Picker("", selection: $selectedType) {
+                Text("One-Time").tag(0)
+                Text("Monthly").tag(1)
+            }
+            .pickerStyle(.segmented)
+            .padding(.horizontal)
+
+            if appState.groups.count > 1 {
+                HStack {
+                    Text("Group:")
+                        .font(.subheadline).foregroundColor(.secondary)
+                    Picker("Group", selection: $selectedGroupIndex) {
+                        ForEach(appState.groups.indices, id: \.self) { i in
+                            Text("\(appState.groups[i].emoji) \(appState.groups[i].name)").tag(i)
                         }
-                        .pickerStyle(.menu)
-                        .tint(theme.primary)
                     }
-                    .padding(.horizontal)
+                    .pickerStyle(.menu)
+                    .tint(theme.primary)
                 }
-
-                NumberPad(value: $amount, theme: theme)
-
-                if didContribute {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
-                        Text("\(parsedAmount.asCurrency) contributed!")
-                            .font(.subheadline).foregroundColor(theme.secondary)
-                    }
-                    .padding()
-                    .background(theme.secondary.opacity(0.1))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .transition(.scale.combined(with: .opacity))
-                }
-
-                Button {
-                    guard parsedAmount > 0 else { return }
-                    let gid = appState.groups.indices.contains(selectedGroupIndex)
-                        ? appState.groups[selectedGroupIndex].id
-                        : appState.groups[0].id
-                    appState.contribute(amount: parsedAmount, toGroup: gid)
-                    withAnimation { didContribute = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
-                } label: {
-                    Text(didContribute ? "Done!" : "Contribute")
-                        .font(.headline).bold()
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(parsedAmount > 0 ? theme.primary : Color.gray.opacity(0.4))
-                        .cornerRadius(16)
-                        .padding(.horizontal)
-                }
-                .disabled(parsedAmount <= 0 || didContribute)
+                .padding(.horizontal)
             }
-            .padding(.top)
-            .navigationTitle("Contribute")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
+
+            NumberPad(value: $amount, theme: theme)
+
+            if didContribute {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
+                    Text("\(parsedAmount.asCurrency) contributed!")
+                        .font(.subheadline).foregroundColor(theme.secondary)
                 }
+                .padding()
+                .background(theme.secondary.opacity(0.1))
+                .cornerRadius(12)
+                .padding(.horizontal)
+                .transition(.scale.combined(with: .opacity))
             }
+
+            Button {
+                guard parsedAmount > 0 else { return }
+                let gid = appState.groups.indices.contains(selectedGroupIndex)
+                    ? appState.groups[selectedGroupIndex].id
+                    : appState.groups[0].id
+                appState.contribute(amount: parsedAmount, toGroup: gid)
+                withAnimation { didContribute = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
+            } label: {
+                Text(didContribute ? "Done!" : "Contribute")
+                    .font(.headline).bold()
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(parsedAmount > 0 ? theme.primary : Color.gray.opacity(0.4))
+                    .cornerRadius(16)
+                    .padding(.horizontal)
+            }
+            .disabled(parsedAmount <= 0 || didContribute)
         }
+        .padding(.bottom, 20)
     }
 }
 
@@ -321,72 +319,76 @@ struct WithdrawSheetView: View {
     var isOverLimit: Bool { parsedAmount > appState.currentUser.walletBalance }
 
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 20) {
-                VStack(spacing: 4) {
-                    Text("Available: \(appState.currentUser.walletBalance.asCurrency)")
-                        .font(.caption)
-                        .foregroundColor(.secondary)
-                    Text(parsedAmount > 0 ? parsedAmount.asCurrency : "$0.00")
-                        .font(.system(size: 52, weight: .black))
-                        .foregroundColor(isOverLimit ? .red : (parsedAmount > 0 ? theme.primary : .secondary))
-                }
+        VStack(spacing: 20) {
+            // Card header
+            HStack {
+                Button("Cancel") { dismiss() }
+                    .foregroundColor(theme.primary)
+                Spacer()
+                Text("Withdraw")
+                    .font(.headline).bold()
+                Spacer()
+                Button("Cancel") { dismiss() }.hidden()
+            }
+            .padding(.horizontal)
+            .padding(.top, 20)
 
-                if isOverLimit {
-                    HStack(spacing: 6) {
-                        Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.red)
-                        Text("Exceeds your available balance.").font(.caption).foregroundColor(.red)
-                    }
-                    .transition(.opacity)
-                }
-
-                Text("Funds sent via ACH to your linked bank within 1-2 business days.")
+            VStack(spacing: 4) {
+                Text("Available: \(appState.currentUser.walletBalance.asCurrency)")
                     .font(.caption)
                     .foregroundColor(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                NumberPad(value: $amount, theme: theme)
-
-                if didWithdraw {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
-                        Text("Withdrawal of \(parsedAmount.asCurrency) initiated!")
-                            .font(.subheadline).foregroundColor(theme.secondary)
-                    }
-                    .padding()
-                    .background(theme.secondary.opacity(0.1))
-                    .cornerRadius(12)
-                    .padding(.horizontal)
-                    .transition(.scale.combined(with: .opacity))
-                }
-
-                Button {
-                    guard parsedAmount > 0, !isOverLimit else { return }
-                    appState.withdraw(amount: parsedAmount)
-                    withAnimation { didWithdraw = true }
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
-                } label: {
-                    Text(didWithdraw ? "Done!" : "Withdraw Funds")
-                        .font(.headline).bold()
-                        .foregroundColor(.white)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 16)
-                        .background(parsedAmount > 0 && !isOverLimit ? theme.primary : Color.gray.opacity(0.4))
-                        .cornerRadius(16)
-                        .padding(.horizontal)
-                }
-                .disabled(parsedAmount <= 0 || isOverLimit || didWithdraw)
+                Text(parsedAmount > 0 ? parsedAmount.asCurrency : "$0.00")
+                    .font(.system(size: 52, weight: .black))
+                    .foregroundColor(isOverLimit ? .red : (parsedAmount > 0 ? theme.primary : .secondary))
             }
-            .padding(.top)
-            .navigationTitle("Withdraw")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
+
+            if isOverLimit {
+                HStack(spacing: 6) {
+                    Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.red)
+                    Text("Exceeds your available balance.").font(.caption).foregroundColor(.red)
                 }
+                .transition(.opacity)
             }
+
+            Text("Funds sent via ACH to your linked bank within 1-2 business days.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+
+            NumberPad(value: $amount, theme: theme)
+
+            if didWithdraw {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
+                    Text("Withdrawal of \(parsedAmount.asCurrency) initiated!")
+                        .font(.subheadline).foregroundColor(theme.secondary)
+                }
+                .padding()
+                .background(theme.secondary.opacity(0.1))
+                .cornerRadius(12)
+                .padding(.horizontal)
+                .transition(.scale.combined(with: .opacity))
+            }
+
+            Button {
+                guard parsedAmount > 0, !isOverLimit else { return }
+                appState.withdraw(amount: parsedAmount)
+                withAnimation { didWithdraw = true }
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
+            } label: {
+                Text(didWithdraw ? "Done!" : "Withdraw Funds")
+                    .font(.headline).bold()
+                    .foregroundColor(.white)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 16)
+                    .background(parsedAmount > 0 && !isOverLimit ? theme.primary : Color.gray.opacity(0.4))
+                    .cornerRadius(16)
+                    .padding(.horizontal)
+            }
+            .disabled(parsedAmount <= 0 || isOverLimit || didWithdraw)
         }
+        .padding(.bottom, 20)
     }
 }
 

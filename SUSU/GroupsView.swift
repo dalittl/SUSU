@@ -9,6 +9,7 @@ struct GroupsView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.theme) var theme
     @State private var selectedGroup: SUSUGroup?
+    @State private var showGroupDetail = false
     @State private var showCreateGroup = false
 
     var body: some View {
@@ -20,7 +21,10 @@ struct GroupsView: View {
                     VStack(spacing: 16) {
                         ForEach(appState.groups) { group in
                             GroupCard(group: group, theme: theme)
-                                .onTapGesture { selectedGroup = group }
+                                .onTapGesture {
+                                    selectedGroup = group
+                                    showGroupDetail = true
+                                }
                         }
 
                         // Create Group Prompt
@@ -52,21 +56,17 @@ struct GroupsView: View {
             }
             .navigationTitle("My Groups")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(item: $selectedGroup) { group in
-                GroupDetailView(group: group)
-                    .environmentObject(appState)
-                    .environment(\.theme, theme)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
+            .popupCard(isPresented: $showGroupDetail) {
+                if let group = selectedGroup {
+                    GroupDetailView(group: group)
+                        .environmentObject(appState)
+                        .environment(\.theme, theme)
+                }
             }
-            .sheet(isPresented: $showCreateGroup) {
+            .popupCard(isPresented: $showCreateGroup) {
                 CreateGroupView()
                     .environmentObject(appState)
                     .environment(\.theme, theme)
-                    .presentationDetents([.fraction(0.82)])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
         }
     }
@@ -173,51 +173,49 @@ struct GroupDetailView: View {
     @State private var selectedTab = 0
 
     var body: some View {
-        NavigationStack {
+        VStack(spacing: 0) {
+            // Card header
+            HStack {
+                Text(group.emoji).font(.title3)
+                Text(group.name).font(.headline).bold()
+                Spacer()
+                Button("Done") { dismiss() }
+                    .foregroundColor(theme.primary)
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 16)
+
+            // Pool balance banner
             ZStack {
-                theme.background.ignoresSafeArea()
-                VStack(spacing: 0) {
-                    // Header
-                    ZStack {
-                        LinearGradient(colors: [theme.primary, theme.secondary],
-                                       startPoint: .topLeading, endPoint: .bottomTrailing)
-                        VStack(spacing: 6) {
-                            Text(group.emoji).font(.system(size: 48))
-                            Text(group.name).font(.title2).bold().foregroundColor(.white)
-                            Text(group.poolBalance.asCurrency)
-                                .font(.system(size: 32, weight: .black)).foregroundColor(.white)
-                            Text("Pool Balance")
-                                .font(.caption).foregroundColor(.white.opacity(0.8))
-                        }
-                        .padding(.vertical, 24)
-                    }
-                    .frame(height: 200)
+                LinearGradient(colors: [theme.primary, theme.secondary],
+                               startPoint: .topLeading, endPoint: .bottomTrailing)
+                VStack(spacing: 4) {
+                    Text(group.poolBalance.asCurrency)
+                        .font(.system(size: 28, weight: .black)).foregroundColor(.white)
+                    Text("Pool Balance")
+                        .font(.caption).foregroundColor(.white.opacity(0.8))
+                }
+                .padding(.vertical, 16)
+            }
+            .frame(height: 80)
 
-                    // Tab picker
-                    Picker("", selection: $selectedTab) {
-                        Text("Members").tag(0)
-                        Text("Goals").tag(1)
-                        Text("Activity").tag(2)
-                    }
-                    .pickerStyle(.segmented)
-                    .padding()
+            // Tab picker
+            Picker("", selection: $selectedTab) {
+                Text("Members").tag(0)
+                Text("Goals").tag(1)
+                Text("Activity").tag(2)
+            }
+            .pickerStyle(.segmented)
+            .padding()
 
-                    ScrollView(showsIndicators: false) {
-                        switch selectedTab {
-                        case 0: membersTab
-                        case 1: goalsTab
-                        default: activityTab
-                        }
-                    }
+            ScrollView(showsIndicators: false) {
+                switch selectedTab {
+                case 0: membersTab
+                case 1: goalsTab
+                default: activityTab
                 }
             }
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }
-                        .foregroundColor(theme.primary)
-                }
-            }
+            .frame(maxHeight: 380)
         }
     }
 
@@ -309,81 +307,83 @@ struct CreateGroupView: View {
     let emojis = ["👨‍👩‍👧‍👦", "🤝", "💼", "🎉", "❤️", "🏠", "✈️", "🎓", "💰", "🌍", "🌟", "🛡️"]
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    Text(selectedEmoji)
-                        .font(.system(size: 72))
-                        .padding(.top, 10)
-
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Group Name", systemImage: "pencil")
-                            .font(.subheadline).foregroundColor(.secondary)
-                        TextField("e.g. Little Family Fund", text: $groupName)
-                            .padding(14)
-                            .background(theme.primary.opacity(0.07))
-                            .cornerRadius(12)
-                    }
-                    .padding(.horizontal)
-
-                    VStack(alignment: .leading, spacing: 10) {
-                        Label("Choose an Emoji", systemImage: "face.smiling")
-                            .font(.subheadline).foregroundColor(.secondary)
-                            .padding(.horizontal)
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
-                            ForEach(emojis, id: \.self) { emoji in
-                                Button {
-                                    selectedEmoji = emoji
-                                } label: {
-                                    Text(emoji)
-                                        .font(.title2)
-                                        .padding(8)
-                                        .background(selectedEmoji == emoji ? theme.primary.opacity(0.18) : Color.clear)
-                                        .cornerRadius(8)
-                                        .overlay(
-                                            RoundedRectangle(cornerRadius: 8)
-                                                .stroke(selectedEmoji == emoji ? theme.primary : Color.clear, lineWidth: 2)
-                                        )
-                                }
-                            }
-                        }
-                        .padding(.horizontal)
-                    }
-
-                    Button {
-                        guard !groupName.isEmpty else { return }
-                        let newGroup = SUSUGroup(
-                            id: UUID(), name: groupName, emoji: selectedEmoji,
-                            members: [
-                                GroupMember(id: UUID(), name: "Dante (You)", initials: "DL",
-                                            role: .owner, walletBalance: 0, colorHex: "#1B6CA8")
-                            ],
-                            poolBalance: 0, goals: [], proposals: [], transactions: [],
-                            isPlusGroup: false, createdAt: Date()
-                        )
-                        appState.addGroup(newGroup)
-                        dismiss()
-                    } label: {
-                        Text("Create Group")
-                            .font(.headline).bold()
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(groupName.isEmpty ? Color.gray.opacity(0.4) : theme.primary)
-                            .cornerRadius(16)
-                    }
-                    .disabled(groupName.isEmpty)
-                    .padding(.horizontal)
-                    .padding(.bottom, 30)
-                }
-            }
-            .navigationTitle("New Group")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Card header
+                HStack {
                     Button("Cancel") { dismiss() }
                         .foregroundColor(theme.primary)
+                    Spacer()
+                    Text("New Group")
+                        .font(.headline).bold()
+                    Spacer()
+                    Button("Cancel") { dismiss() }.hidden()
                 }
+                .padding(.horizontal)
+                .padding(.top, 20)
+
+                Text(selectedEmoji)
+                    .font(.system(size: 72))
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Group Name", systemImage: "pencil")
+                        .font(.subheadline).foregroundColor(.secondary)
+                    TextField("e.g. Little Family Fund", text: $groupName)
+                        .padding(14)
+                        .background(theme.primary.opacity(0.07))
+                        .cornerRadius(12)
+                }
+                .padding(.horizontal)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Label("Choose an Emoji", systemImage: "face.smiling")
+                        .font(.subheadline).foregroundColor(.secondary)
+                        .padding(.horizontal)
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
+                        ForEach(emojis, id: \.self) { emoji in
+                            Button {
+                                selectedEmoji = emoji
+                            } label: {
+                                Text(emoji)
+                                    .font(.title2)
+                                    .padding(8)
+                                    .background(selectedEmoji == emoji ? theme.primary.opacity(0.18) : Color.clear)
+                                    .cornerRadius(8)
+                                    .overlay(
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .stroke(selectedEmoji == emoji ? theme.primary : Color.clear, lineWidth: 2)
+                                    )
+                            }
+                        }
+                    }
+                    .padding(.horizontal)
+                }
+
+                Button {
+                    guard !groupName.isEmpty else { return }
+                    let newGroup = SUSUGroup(
+                        id: UUID(), name: groupName, emoji: selectedEmoji,
+                        members: [
+                            GroupMember(id: UUID(), name: "Dante (You)", initials: "DL",
+                                        role: .owner, walletBalance: 0, colorHex: "#1B6CA8")
+                        ],
+                        poolBalance: 0, goals: [], proposals: [], transactions: [],
+                        isPlusGroup: false, createdAt: Date()
+                    )
+                    appState.addGroup(newGroup)
+                    dismiss()
+                } label: {
+                    Text("Create Group")
+                        .font(.headline).bold()
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(groupName.isEmpty ? Color.gray.opacity(0.4) : theme.primary)
+                        .cornerRadius(16)
+                }
+                .disabled(groupName.isEmpty)
+                .padding(.horizontal)
+                .padding(.bottom, 24)
             }
         }
     }

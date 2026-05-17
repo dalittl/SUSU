@@ -36,17 +36,11 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showBankLink) {
+            .popupCard(isPresented: $showBankLink) {
                 BankLinkView(theme: theme)
-                    .presentationDetents([.fraction(0.72)])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
-            .sheet(isPresented: $showDebitCard) {
+            .popupCard(isPresented: $showDebitCard) {
                 DebitCardView(theme: theme)
-                    .presentationDetents([.fraction(0.58)])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
             .sheet(isPresented: $showPrivacy) { LegalContentView(title: "Privacy Policy", isTerms: false) }
             .sheet(isPresented: $showTerms) { LegalContentView(title: "Terms of Service", isTerms: true) }
@@ -294,63 +288,63 @@ struct BankLinkView: View {
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    Image(systemName: "building.columns.fill")
-                        .font(.system(size: 60))
-                        .foregroundColor(theme.primary)
-                        .padding(.top, 30)
+        VStack(spacing: 20) {
+            // Card header
+            HStack {
+                Button("Done") { dismiss() }.hidden()
+                Spacer()
+                Text("Bank Account")
+                    .font(.headline).bold()
+                Spacer()
+                Button("Done") { dismiss() }.foregroundColor(theme.primary)
+            }
+            .padding(.horizontal)
+            .padding(.top, 20)
 
-                    Text("Linked Accounts")
-                        .font(.title2).bold()
+            Image(systemName: "building.columns.fill")
+                .font(.system(size: 60))
+                .foregroundColor(theme.primary)
 
-                    HStack(spacing: 14) {
-                        Image(systemName: "creditcard.fill")
-                            .font(.title2).foregroundColor(theme.primary)
-                        VStack(alignment: .leading, spacing: 2) {
-                            Text("Chase Bank").font(.subheadline).bold()
-                            Text("Checking ****4821").font(.caption).foregroundColor(.secondary)
-                        }
-                        Spacer()
-                        Text("Active")
-                            .font(.caption).bold()
-                            .padding(.horizontal, 8).padding(.vertical, 4)
-                            .background(Color.green.opacity(0.15))
-                            .foregroundColor(.green)
-                            .cornerRadius(6)
-                    }
-                    .padding()
-                    .background(Color(.systemBackground))
-                    .cornerRadius(14)
-                    .shadow(color: theme.primary.opacity(0.07), radius: 6, x: 0, y: 3)
+            Text("Linked Accounts")
+                .font(.title2).bold()
+
+            HStack(spacing: 14) {
+                Image(systemName: "creditcard.fill")
+                    .font(.title2).foregroundColor(theme.primary)
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Chase Bank").font(.subheadline).bold()
+                    Text("Checking ****4821").font(.caption).foregroundColor(.secondary)
+                }
+                Spacer()
+                Text("Active")
+                    .font(.caption).bold()
+                    .padding(.horizontal, 8).padding(.vertical, 4)
+                    .background(Color.green.opacity(0.15))
+                    .foregroundColor(.green)
+                    .cornerRadius(6)
+            }
+            .padding()
+            .background(Color(.systemBackground))
+            .cornerRadius(14)
+            .shadow(color: theme.primary.opacity(0.07), radius: 6, x: 0, y: 3)
+            .padding(.horizontal)
+
+            Button {} label: {
+                Label("Add Another Account", systemImage: "plus.circle")
+                    .font(.subheadline).bold()
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 14)
+                    .background(theme.primary.opacity(0.1))
+                    .foregroundColor(theme.primary)
+                    .cornerRadius(12)
                     .padding(.horizontal)
-
-                    Button {} label: {
-                        Label("Add Another Account", systemImage: "plus.circle")
-                            .font(.subheadline).bold()
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 14)
-                            .background(theme.primary.opacity(0.1))
-                            .foregroundColor(theme.primary)
-                            .cornerRadius(12)
-                            .padding(.horizontal)
-                    }
-
-                    Text("Connected via Plaid. Your bank credentials are never stored by SUSU.")
-                        .font(.caption).foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                }
-                .padding(.bottom, 30)
             }
-            .navigationTitle("Bank Account")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Done") { dismiss() }.foregroundColor(theme.primary)
-                }
-            }
+
+            Text("Connected via Plaid. Your bank credentials are never stored by SUSU.")
+                .font(.caption).foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
+                .padding(.bottom, 24)
         }
     }
 }
@@ -362,67 +356,70 @@ struct DebitCardView: View {
     @Environment(\.dismiss) var dismiss
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 24) {
-                    ZStack {
-                        RoundedRectangle(cornerRadius: 20)
-                            .fill(LinearGradient(colors: [theme.primary, theme.secondary],
-                                                 startPoint: .topLeading, endPoint: .bottomTrailing))
-                            .frame(height: 200)
-                            .shadow(color: theme.primary.opacity(0.3), radius: 16, x: 0, y: 8)
-                        VStack(alignment: .leading, spacing: 12) {
-                            HStack {
-                                Text("SUSU").font(.headline).bold().foregroundColor(.white)
-                                Spacer()
-                                Image(systemName: "creditcard.fill").font(.title2).foregroundColor(.white.opacity(0.7))
-                            }
-                            Spacer()
-                            Text("•••• •••• •••• ????")
-                                .font(.title3).bold().foregroundColor(.white.opacity(0.85))
-                            HStack {
-                                Text("Dante Little").font(.caption).foregroundColor(.white.opacity(0.8))
-                                Spacer()
-                                Text("PLUS ONLY")
-                                    .font(.caption2).bold()
-                                    .padding(.horizontal, 8).padding(.vertical, 3)
-                                    .background(.white.opacity(0.2)).foregroundColor(.white).cornerRadius(6)
-                            }
-                        }
-                        .padding(22)
-                    }
-                    .padding(.horizontal).padding(.top)
-
-                    VStack(spacing: 8) {
-                        Text("Upgrade to SUSU Plus").font(.title3).bold()
-                        Text("Get a SUSU debit card for instant spending from approved disbursements. $4.99/month per group.")
-                            .font(.subheadline).foregroundColor(.secondary)
-                            .multilineTextAlignment(.center).padding(.horizontal)
-                    }
-
-                    VStack(spacing: 10) {
-                        FeatureRow(icon: "creditcard.fill", text: "Physical & virtual debit card", color: theme.primary)
-                        FeatureRow(icon: "bolt.fill", text: "Instant disbursement spending", color: theme.secondary)
-                        FeatureRow(icon: "chart.bar.fill", text: "Year-end tax & gifting report", color: theme.accent)
-                        FeatureRow(icon: "person.3.fill", text: "Unlimited group members", color: theme.primary)
-                    }
-                    .padding(.horizontal)
-
-                    Button { dismiss() } label: {
-                        Text("Upgrade to Plus — $4.99/mo")
-                            .font(.headline).bold().foregroundColor(.white)
-                            .frame(maxWidth: .infinity).padding(.vertical, 16)
-                            .background(theme.primary).cornerRadius(16).padding(.horizontal)
-                    }
-                    .padding(.bottom, 30)
-                }
-            }
-            .navigationTitle("SUSU Debit Card")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
+        ScrollView {
+            VStack(spacing: 24) {
+                // Card header
+                HStack {
+                    Button("Done") { dismiss() }.hidden()
+                    Spacer()
+                    Text("SUSU Debit Card")
+                        .font(.headline).bold()
+                    Spacer()
                     Button("Done") { dismiss() }.foregroundColor(theme.primary)
                 }
+                .padding(.horizontal)
+                .padding(.top, 20)
+
+                ZStack {
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(LinearGradient(colors: [theme.primary, theme.secondary],
+                                             startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(height: 200)
+                        .shadow(color: theme.primary.opacity(0.3), radius: 16, x: 0, y: 8)
+                    VStack(alignment: .leading, spacing: 12) {
+                        HStack {
+                            Text("SUSU").font(.headline).bold().foregroundColor(.white)
+                            Spacer()
+                            Image(systemName: "creditcard.fill").font(.title2).foregroundColor(.white.opacity(0.7))
+                        }
+                        Spacer()
+                        Text("•••• •••• •••• ????")
+                            .font(.title3).bold().foregroundColor(.white.opacity(0.85))
+                        HStack {
+                            Text("Dante Little").font(.caption).foregroundColor(.white.opacity(0.8))
+                            Spacer()
+                            Text("PLUS ONLY")
+                                .font(.caption2).bold()
+                                .padding(.horizontal, 8).padding(.vertical, 3)
+                                .background(.white.opacity(0.2)).foregroundColor(.white).cornerRadius(6)
+                        }
+                    }
+                    .padding(22)
+                }
+                .padding(.horizontal).padding(.top)
+
+                VStack(spacing: 8) {
+                    Text("Upgrade to SUSU Plus").font(.title3).bold()
+                    Text("Get a SUSU debit card for instant spending from approved disbursements. $4.99/month per group.")
+                        .font(.subheadline).foregroundColor(.secondary)
+                        .multilineTextAlignment(.center).padding(.horizontal)
+                }
+
+                VStack(spacing: 10) {
+                    FeatureRow(icon: "creditcard.fill", text: "Physical & virtual debit card", color: theme.primary)
+                    FeatureRow(icon: "bolt.fill", text: "Instant disbursement spending", color: theme.secondary)
+                    FeatureRow(icon: "chart.bar.fill", text: "Year-end tax & gifting report", color: theme.accent)
+                    FeatureRow(icon: "person.3.fill", text: "Unlimited group members", color: theme.primary)
+                }
+                .padding(.horizontal)
+
+                Button { dismiss() } label: {
+                    Text("Upgrade to Plus — $4.99/mo")
+                        .font(.headline).bold().foregroundColor(.white)
+                        .frame(maxWidth: .infinity).padding(.vertical, 16)
+                        .background(theme.primary).cornerRadius(16).padding(.horizontal)
+                }
+                .padding(.bottom, 24)
             }
         }
     }

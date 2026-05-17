@@ -69,12 +69,9 @@ struct ProposalsView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showNewProposal) {
+            .popupCard(isPresented: $showNewProposal) {
                 NewProposalView(theme: theme, groups: appState.groups)
                     .environmentObject(appState)
-                    .presentationDetents([.large])
-                    .presentationDragIndicator(.visible)
-                    .presentationCornerRadius(28)
             }
         }
     }
@@ -337,144 +334,149 @@ struct NewProposalView: View {
     @State private var showPhotoPicker = false
 
     var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(spacing: 20) {
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Group", systemImage: "person.3.fill")
-                            .font(.subheadline).foregroundColor(.secondary)
-                        Picker("Group", selection: $selectedGroupIndex) {
-                            ForEach(groups.indices, id: \.self) { i in
-                                Text("\(groups[i].emoji) \(groups[i].name)").tag(i)
-                            }
+        ScrollView {
+            VStack(spacing: 20) {
+                // Card header
+                HStack {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(theme.primary)
+                    Spacer()
+                    Text("New Proposal")
+                        .font(.headline).bold()
+                    Spacer()
+                    Button("Cancel") { dismiss() }.hidden()
+                }
+                .padding(.horizontal)
+                .padding(.top, 20)
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Group", systemImage: "person.3.fill")
+                        .font(.subheadline).foregroundColor(.secondary)
+                    Picker("Group", selection: $selectedGroupIndex) {
+                        ForEach(groups.indices, id: \.self) { i in
+                            Text("\(groups[i].emoji) \(groups[i].name)").tag(i)
                         }
-                        .pickerStyle(.menu)
-                        .padding(10)
+                    }
+                    .pickerStyle(.menu)
+                    .padding(10)
+                    .background(theme.primary.opacity(0.07))
+                    .cornerRadius(10)
+                }
+
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Title", systemImage: "pencil")
+                        .font(.subheadline).foregroundColor(.secondary)
+                    TextField("e.g. Grandma's Birthday Gift", text: $title)
+                        .padding(12)
                         .background(theme.primary.opacity(0.07))
                         .cornerRadius(10)
-                    }
+                }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Title", systemImage: "pencil")
-                            .font(.subheadline).foregroundColor(.secondary)
-                        TextField("e.g. Grandma's Birthday Gift", text: $title)
-                            .padding(12)
-                            .background(theme.primary.opacity(0.07))
-                            .cornerRadius(10)
-                    }
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Amount (USD)", systemImage: "dollarsign.circle.fill")
+                        .font(.subheadline).foregroundColor(.secondary)
+                    TextField("0.00", text: $amount)
+                        .keyboardType(.decimalPad)
+                        .padding(12)
+                        .background(theme.primary.opacity(0.07))
+                        .cornerRadius(10)
+                }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Amount (USD)", systemImage: "dollarsign.circle.fill")
-                            .font(.subheadline).foregroundColor(.secondary)
-                        TextField("0.00", text: $amount)
-                            .keyboardType(.decimalPad)
-                            .padding(12)
-                            .background(theme.primary.opacity(0.07))
-                            .cornerRadius(10)
-                    }
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Description", systemImage: "text.alignleft")
+                        .font(.subheadline).foregroundColor(.secondary)
+                    TextEditor(text: $description)
+                        .frame(height: 100)
+                        .padding(8)
+                        .background(theme.primary.opacity(0.07))
+                        .cornerRadius(10)
+                }
 
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Description", systemImage: "text.alignleft")
-                            .font(.subheadline).foregroundColor(.secondary)
-                        TextEditor(text: $description)
-                            .frame(height: 100)
-                            .padding(8)
-                            .background(theme.primary.opacity(0.07))
-                            .cornerRadius(10)
-                    }
-
-                    // Photos
-                    VStack(alignment: .leading, spacing: 8) {
-                        Label("Photos", systemImage: "photo.on.rectangle.angled")
-                            .font(.subheadline).foregroundColor(.secondary)
-                        if !photoURLs.isEmpty {
-                            ScrollView(.horizontal, showsIndicators: false) {
-                                HStack(spacing: 8) {
-                                    ForEach(photoURLs, id: \.self) { url in
-                                        ZStack(alignment: .topTrailing) {
-                                            AsyncImage(url: URL(string: url)) { phase in
-                                                switch phase {
-                                                case .success(let img): img.resizable().scaledToFill()
-                                                default: Color.gray.opacity(0.2)
-                                                }
+                // Photos
+                VStack(alignment: .leading, spacing: 8) {
+                    Label("Photos", systemImage: "photo.on.rectangle.angled")
+                        .font(.subheadline).foregroundColor(.secondary)
+                    if !photoURLs.isEmpty {
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack(spacing: 8) {
+                                ForEach(photoURLs, id: \.self) { url in
+                                    ZStack(alignment: .topTrailing) {
+                                        AsyncImage(url: URL(string: url)) { phase in
+                                            switch phase {
+                                            case .success(let img): img.resizable().scaledToFill()
+                                            default: Color.gray.opacity(0.2)
                                             }
-                                            .frame(width: 80, height: 60)
-                                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                                            Button {
-                                                photoURLs.removeAll { $0 == url }
-                                            } label: {
-                                                Image(systemName: "xmark.circle.fill")
-                                                    .font(.caption)
-                                                    .foregroundStyle(.white, Color.black.opacity(0.6))
-                                            }
-                                            .offset(x: 4, y: -4)
                                         }
+                                        .frame(width: 80, height: 60)
+                                        .clipShape(RoundedRectangle(cornerRadius: 8))
+                                        Button {
+                                            photoURLs.removeAll { $0 == url }
+                                        } label: {
+                                            Image(systemName: "xmark.circle.fill")
+                                                .font(.caption)
+                                                .foregroundStyle(.white, Color.black.opacity(0.6))
+                                        }
+                                        .offset(x: 4, y: -4)
                                     }
                                 }
                             }
                         }
-                        Button {
-                            showPhotoPicker = true
-                        } label: {
-                            HStack {
-                                Image(systemName: "plus.app")
-                                Text(photoURLs.isEmpty ? "Add Photos" : "Add More")
-                            }
-                            .font(.subheadline)
-                            .padding(10)
-                            .frame(maxWidth: .infinity)
-                            .background(theme.primary.opacity(0.07))
-                            .foregroundColor(theme.primary)
-                            .cornerRadius(10)
-                        }
                     }
-
-                    if didSubmit {
-                        HStack(spacing: 8) {
-                            Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
-                            Text("Proposal submitted!").font(.subheadline).foregroundColor(theme.secondary)
-                        }
-                        .padding()
-                        .background(theme.secondary.opacity(0.1))
-                        .cornerRadius(12)
-                        .transition(.scale.combined(with: .opacity))
-                    }
-
                     Button {
-                        guard !title.isEmpty, let amountVal = Double(amount), amountVal > 0 else { return }
-                        let targetGroup = groups.indices.contains(selectedGroupIndex) ? groups[selectedGroupIndex] : groups[0]
-                        let proposal = Proposal(
-                            id: UUID(), title: title, description: description,
-                            amount: amountVal, proposedBy: "Dante (You)",
-                            votes: [], status: .pending, createdAt: Date(),
-                            photoURLs: photoURLs
-                        )
-                        appState.addProposal(proposal, toGroup: targetGroup.id)
-                        withAnimation { didSubmit = true }
-                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
+                        showPhotoPicker = true
                     } label: {
-                        Text(didSubmit ? "Submitted!" : "Submit Proposal")
-                            .font(.headline).bold()
-                            .foregroundColor(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 16)
-                            .background(title.isEmpty || amount.isEmpty ? Color.gray : theme.primary)
-                            .cornerRadius(16)
+                        HStack {
+                            Image(systemName: "plus.app")
+                            Text(photoURLs.isEmpty ? "Add Photos" : "Add More")
+                        }
+                        .font(.subheadline)
+                        .padding(10)
+                        .frame(maxWidth: .infinity)
+                        .background(theme.primary.opacity(0.07))
+                        .foregroundColor(theme.primary)
+                        .cornerRadius(10)
                     }
-                    .disabled(title.isEmpty || amount.isEmpty || didSubmit)
                 }
-                .padding()
-            }
-            .navigationTitle("New Proposal")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
+
+                if didSubmit {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
+                        Text("Proposal submitted!").font(.subheadline).foregroundColor(theme.secondary)
+                    }
+                    .padding()
+                    .background(theme.secondary.opacity(0.1))
+                    .cornerRadius(12)
+                    .transition(.scale.combined(with: .opacity))
                 }
+
+                Button {
+                    guard !title.isEmpty, let amountVal = Double(amount), amountVal > 0 else { return }
+                    let targetGroup = groups.indices.contains(selectedGroupIndex) ? groups[selectedGroupIndex] : groups[0]
+                    let proposal = Proposal(
+                        id: UUID(), title: title, description: description,
+                        amount: amountVal, proposedBy: "Dante (You)",
+                        votes: [], status: .pending, createdAt: Date(),
+                        photoURLs: photoURLs
+                    )
+                    appState.addProposal(proposal, toGroup: targetGroup.id)
+                    withAnimation { didSubmit = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
+                } label: {
+                    Text(didSubmit ? "Submitted!" : "Submit Proposal")
+                        .font(.headline).bold()
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(title.isEmpty || amount.isEmpty ? Color.gray : theme.primary)
+                        .cornerRadius(16)
+                }
+                .disabled(title.isEmpty || amount.isEmpty || didSubmit)
+                .padding(.bottom, 24)
             }
-            .sheet(isPresented: $showPhotoPicker) {
-                PhotoPickerSheet(theme: theme, selectedURLs: $photoURLs)
-            }
+            .padding(.horizontal)
+        }
+        .sheet(isPresented: $showPhotoPicker) {
+            PhotoPickerSheet(theme: theme, selectedURLs: $photoURLs)
         }
     }
 }
