@@ -120,7 +120,7 @@ struct ProfileView: View {
 
     var themeSection: some View {
         VStack(alignment: .leading, spacing: 14) {
-            SectionHeader(title: "App Appearance")
+            HomeSection(title: "App Appearance")
             Text("Choose a color palette")
                 .font(.caption)
                 .foregroundColor(.secondary)
