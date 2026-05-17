@@ -148,7 +148,7 @@ struct WalletView: View {
 
     var contributionChart: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Monthly Contributions")
+            HomeSection(title: "Monthly Contributions")
             HStack(alignment: .bottom, spacing: 10) {
                 let months = ["Dec", "Jan", "Feb", "Mar", "Apr", "May"]
                 let values = appState.currentUser.monthlyContributions
@@ -183,7 +183,7 @@ struct WalletView: View {
 
     var groupBreakdown: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "My Contribution by Group")
+            HomeSection(title: "My Contribution by Group")
             ForEach(appState.groups) { group in
                 HStack {
                     Text(group.emoji)
