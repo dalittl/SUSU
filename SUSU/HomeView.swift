@@ -12,6 +12,8 @@ struct HomeView: View {
     @State private var showPropose = false
     @State private var showWithdraw = false
     @State private var showInvite = false
+    @State private var walletVisible = false
+    @State private var selectedGroupIndex = 0
 
     var body: some View {
         NavigationStack {
@@ -19,16 +21,22 @@ struct HomeView: View {
                 theme.background.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 20) {
-                        headerCard
-                        statsRow
-                        quickActions
-                        recentActivitySection
-                        goalsSummary
-                        Spacer(minLength: 30)
+                    VStack(spacing: 0) {
+                        heroHeader
+                            .padding(.bottom, 24)
+
+                        VStack(spacing: 22) {
+                            quickActions
+                            if !appState.pendingProposals.isEmpty {
+                                attentionBanner
+                            }
+                            groupCarousel
+                            goalsSummary
+                            recentActivitySection
+                            Spacer(minLength: 40)
+                        }
+                        .padding(.horizontal, 20)
                     }
-                    .padding(.horizontal)
-                    .padding(.top, 16)
                 }
             }
             .navigationBarHidden(true)
@@ -44,112 +52,205 @@ struct HomeView: View {
             .sheet(isPresented: $showInvite) {
                 InviteView(theme: theme)
             }
-        }
-    }
-
-    // MARK: - Header Card
-
-    var headerCard: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(
-                    LinearGradient(colors: [theme.primary, theme.secondary],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                )
-                .shadow(color: theme.primary.opacity(0.35), radius: 16, x: 0, y: 8)
-
-            VStack(alignment: .leading, spacing: 6) {
-                HStack {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Good \(greeting), Dante 👋")
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.85))
-                        Text("SUSU")
-                            .font(.system(size: 32, weight: .black))
-                            .foregroundColor(.white)
-                    }
-                    Spacer()
-                    Circle()
-                        .fill(.white.opacity(0.2))
-                        .frame(width: 50, height: 50)
-                        .overlay(Text("DL").font(.headline).bold().foregroundColor(.white))
-                }
-
-                Text("Shared Spending Platform")
-                    .font(.caption)
-                    .foregroundColor(.white.opacity(0.7))
-                    .padding(.bottom, 8)
-
-                Divider().background(.white.opacity(0.3))
-                    .padding(.vertical, 4)
-
-                HStack {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("MY WALLET")
-                            .font(.caption2).fontWeight(.semibold)
-                            .foregroundColor(.white.opacity(0.7))
-                        Text(appState.myWalletBalance.asCurrency)
-                            .font(.title2).bold()
-                            .foregroundColor(.white)
-                    }
-                    Spacer()
-                    VStack(alignment: .trailing, spacing: 2) {
-                        Text("TOTAL POOLED")
-                            .font(.caption2).fontWeight(.semibold)
-                            .foregroundColor(.white.opacity(0.7))
-                        Text(appState.totalPoolBalance.asCurrency)
-                            .font(.title2).bold()
-                            .foregroundColor(.white)
-                    }
+            .onAppear {
+                withAnimation(.spring(response: 0.7, dampingFraction: 0.8).delay(0.2)) {
+                    walletVisible = true
                 }
             }
-            .padding(22)
         }
     }
 
-    // MARK: - Stats Row
+    // MARK: - Hero Header
 
-    var statsRow: some View {
-        HStack(spacing: 12) {
-            StatCard(icon: "person.3.fill", label: "Groups", value: "\(appState.groups.count)", color: theme.primary)
-            StatCard(icon: "doc.text.fill", label: "Pending", value: "\(appState.pendingProposals.count)", color: theme.accent)
-            StatCard(icon: "checkmark.circle.fill", label: "Approved", value: "\(appState.groups.flatMap(\.proposals).filter { $0.status == .approved }.count)", color: theme.secondary)
+    var heroHeader: some View {
+        ZStack(alignment: .bottom) {
+            // Full-bleed gradient background
+            LinearGradient(
+                colors: [theme.primary, theme.secondary, theme.primary.opacity(0.7)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+            .ignoresSafeArea(edges: .top)
+
+            // Decorative circles
+            GeometryReader { geo in
+                ZStack {
+                    Circle()
+                        .fill(.white.opacity(0.06))
+                        .frame(width: 260, height: 260)
+                        .offset(x: geo.size.width - 80, y: -60)
+                    Circle()
+                        .fill(.white.opacity(0.05))
+                        .frame(width: 180, height: 180)
+                        .offset(x: -40, y: 20)
+                    Circle()
+                        .fill(.white.opacity(0.04))
+                        .frame(width: 120, height: 120)
+                        .offset(x: geo.size.width * 0.4, y: geo.size.height * 0.1)
+                }
+            }
+            .frame(height: 260)
+
+            // Content
+            VStack(spacing: 0) {
+                // Top bar
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text("Good \(greeting) 👋")
+                            .font(.subheadline)
+                            .foregroundColor(.white.opacity(0.8))
+                        Text("Dante")
+                            .font(.system(size: 26, weight: .black))
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                    // Avatar + notification dot
+                    ZStack(alignment: .topTrailing) {
+                        Circle()
+                            .fill(.white.opacity(0.25))
+                            .frame(width: 46, height: 46)
+                            .overlay(Text("DL").font(.subheadline).bold().foregroundColor(.white))
+                        Circle()
+                            .fill(Color.yellow)
+                            .frame(width: 10, height: 10)
+                            .offset(x: 2, y: -2)
+                    }
+                }
+                .padding(.horizontal, 22)
+                .padding(.top, 16)
+
+                Spacer(minLength: 20)
+
+                // Wallet + Pooled card
+                HStack(spacing: 0) {
+                    // Wallet
+                    VStack(spacing: 6) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "wallet.pass.fill")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                            Text("MY WALLET")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
+                                .tracking(1)
+                        }
+                        Text(walletVisible ? appState.myWalletBalance.asCurrency : "••••")
+                            .font(.system(size: 28, weight: .black))
+                            .foregroundColor(.white)
+                            .contentTransition(.numericText())
+                            .animation(.spring(response: 0.5), value: walletVisible)
+                    }
+                    .frame(maxWidth: .infinity)
+
+                    // Divider
+                    Rectangle()
+                        .fill(.white.opacity(0.25))
+                        .frame(width: 1, height: 50)
+
+                    // Pooled
+                    VStack(spacing: 6) {
+                        HStack(spacing: 4) {
+                            Image(systemName: "drop.fill")
+                                .font(.caption)
+                                .foregroundColor(.white.opacity(0.7))
+                            Text("TOTAL POOLED")
+                                .font(.system(size: 10, weight: .semibold))
+                                .foregroundColor(.white.opacity(0.7))
+                                .tracking(1)
+                        }
+                        Text(walletVisible ? appState.totalPoolBalance.asCurrency : "••••")
+                            .font(.system(size: 28, weight: .black))
+                            .foregroundColor(.white)
+                            .contentTransition(.numericText())
+                            .animation(.spring(response: 0.5).delay(0.1), value: walletVisible)
+                    }
+                    .frame(maxWidth: .infinity)
+                }
+                .padding(.vertical, 20)
+                .padding(.horizontal, 10)
+                .background(.white.opacity(0.12))
+                .background(.ultraThinMaterial.opacity(0.3))
+                .cornerRadius(20)
+                .padding(.horizontal, 16)
+
+                // Pill stats row
+                HStack(spacing: 10) {
+                    HeroPill(icon: "person.3.fill", value: "\(appState.groups.count)", label: "Groups")
+                    HeroPill(icon: "doc.text.fill", value: "\(appState.pendingProposals.count)", label: "Pending")
+                    HeroPill(icon: "checkmark.seal.fill",
+                             value: "\(appState.groups.flatMap(\.proposals).filter { $0.status == .approved }.count)",
+                             label: "Approved")
+                }
+                .padding(.horizontal, 20)
+                .padding(.top, 14)
+                .padding(.bottom, 28)
+            }
         }
+        .frame(minHeight: 310)
     }
 
     // MARK: - Quick Actions
 
     var quickActions: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Quick Actions")
-            HStack(spacing: 12) {
-                QuickActionButton(icon: "plus.circle.fill", label: "Contribute", color: theme.primary) { showContribute = true }
-                QuickActionButton(icon: "lightbulb.fill", label: "Propose", color: theme.secondary) { showPropose = true }
-                QuickActionButton(icon: "arrow.down.circle.fill", label: "Withdraw", color: theme.accent) { showWithdraw = true }
-                QuickActionButton(icon: "person.badge.plus", label: "Invite", color: theme.textSecondary) { showInvite = true }
-            }
+        HStack(spacing: 10) {
+            HomeActionTile(icon: "plus.circle.fill", label: "Add\nFunds",
+                           gradient: [theme.primary, theme.primary.opacity(0.7)]) { showContribute = true }
+            HomeActionTile(icon: "lightbulb.fill", label: "New\nProposal",
+                           gradient: [theme.secondary, theme.secondary.opacity(0.7)]) { showPropose = true }
+            HomeActionTile(icon: "arrow.down.circle.fill", label: "Withdraw",
+                           gradient: [theme.accent, theme.accent.opacity(0.7)]) { showWithdraw = true }
+            HomeActionTile(icon: "person.badge.plus", label: "Invite\nMember",
+                           gradient: [theme.textSecondary, theme.textSecondary.opacity(0.7)]) { showInvite = true }
         }
     }
 
-    // MARK: - Recent Activity
+    // MARK: - Attention Banner
 
-    var recentActivitySection: some View {
+    var attentionBanner: some View {
+        HStack(spacing: 14) {
+            ZStack {
+                Circle().fill(theme.accent.opacity(0.15)).frame(width: 42, height: 42)
+                Image(systemName: "bell.badge.fill")
+                    .foregroundColor(theme.accent)
+                    .font(.system(size: 18))
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text("\(appState.pendingProposals.count) Proposal\(appState.pendingProposals.count == 1 ? "" : "s") Need Your Vote")
+                    .font(.subheadline).bold()
+                Text(appState.pendingProposals.first?.title ?? "")
+                    .font(.caption).foregroundColor(.secondary)
+                    .lineLimit(1)
+            }
+            Spacer()
+            Image(systemName: "chevron.right")
+                .font(.caption).foregroundColor(.secondary)
+        }
+        .padding(14)
+        .background(theme.cardBackground)
+        .cornerRadius(16)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(theme.accent.opacity(0.3), lineWidth: 1.5)
+        )
+        .shadow(color: theme.accent.opacity(0.1), radius: 8, x: 0, y: 4)
+    }
+
+    // MARK: - Group Carousel
+
+    var groupCarousel: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Recent Activity")
-            let all = appState.groups.flatMap(\.transactions)
-                .sorted { $0.date > $1.date }
-                .prefix(5)
-            VStack(spacing: 0) {
-                ForEach(Array(all)) { tx in
-                    TransactionRow(tx: tx, theme: theme)
-                    if tx.id != all.last?.id {
-                        Divider().padding(.leading, 52)
-                    }
+            HomeSection(title: "Your Groups", count: appState.groups.count)
+
+            TabView(selection: $selectedGroupIndex) {
+                ForEach(appState.groups.indices, id: \.self) { i in
+                    GroupPoolCard(group: appState.groups[i], theme: theme)
+                        .tag(i)
+                        .padding(.horizontal, 2)
+                        .padding(.bottom, 12)
                 }
             }
-            .background(theme.cardBackground)
-            .cornerRadius(16)
-            .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
+            .tabViewStyle(.page(indexDisplayMode: .automatic))
+            .frame(height: 185)
         }
     }
 
@@ -157,7 +258,7 @@ struct HomeView: View {
 
     var goalsSummary: some View {
         VStack(alignment: .leading, spacing: 12) {
-            SectionHeader(title: "Active Goals")
+            HomeSection(title: "Active Goals", count: appState.groups.flatMap(\.goals).count)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 14) {
                     ForEach(appState.groups.flatMap(\.goals)) { goal in
@@ -167,6 +268,28 @@ struct HomeView: View {
                 .padding(.horizontal, 2)
                 .padding(.vertical, 4)
             }
+        }
+    }
+
+    // MARK: - Recent Activity
+
+    var recentActivitySection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            HomeSection(title: "Recent Activity")
+            let all = Array(appState.groups.flatMap(\.transactions)
+                .sorted { $0.date > $1.date }
+                .prefix(5))
+            VStack(spacing: 0) {
+                ForEach(Array(all.enumerated()), id: \.element.id) { idx, tx in
+                    TransactionRow(tx: tx, theme: theme)
+                    if idx < all.count - 1 {
+                        Divider().padding(.leading, 52)
+                    }
+                }
+            }
+            .background(theme.cardBackground)
+            .cornerRadius(18)
+            .shadow(color: theme.primary.opacity(0.07), radius: 10, x: 0, y: 4)
         }
     }
 
@@ -180,52 +303,183 @@ struct HomeView: View {
     }
 }
 
-// MARK: - Sub-Components
+// MARK: - Hero Pill
 
-struct StatCard: View {
+struct HeroPill: View {
     let icon: String
-    let label: String
     let value: String
-    let color: Color
+    let label: String
 
     var body: some View {
-        VStack(spacing: 6) {
+        HStack(spacing: 5) {
             Image(systemName: icon)
-                .font(.title2)
-                .foregroundColor(color)
+                .font(.caption2)
+                .foregroundColor(.white.opacity(0.8))
             Text(value)
-                .font(.title3).bold()
+                .font(.caption).bold()
+                .foregroundColor(.white)
             Text(label)
-                .font(.caption)
-                .foregroundColor(.secondary)
+                .font(.caption2)
+                .foregroundColor(.white.opacity(0.75))
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 14)
-        .background(.white)
-        .cornerRadius(14)
-        .shadow(color: color.opacity(0.12), radius: 6, x: 0, y: 3)
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(.white.opacity(0.15))
+        .cornerRadius(20)
     }
 }
 
-struct QuickActionButton: View {
+// MARK: - Home Action Tile
+
+struct HomeActionTile: View {
     let icon: String
     let label: String
-    let color: Color
+    let gradient: [Color]
     let action: () -> Void
+    @State private var pressed = false
 
     var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                Circle()
-                    .fill(color.opacity(0.12))
-                    .frame(width: 48, height: 48)
-                    .overlay(Image(systemName: icon).foregroundColor(color).font(.system(size: 20)))
-                Text(label)
-                    .font(.caption2).fontWeight(.medium)
-                    .foregroundColor(.primary)
+        Button(action: {
+            withAnimation(.spring(response: 0.25)) { pressed = true }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+                pressed = false
+                action()
             }
+        }) {
+            VStack(spacing: 10) {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 16)
+                        .fill(LinearGradient(colors: gradient, startPoint: .topLeading, endPoint: .bottomTrailing))
+                        .frame(width: 52, height: 52)
+                        .shadow(color: gradient.first!.opacity(0.35), radius: 8, x: 0, y: 4)
+                    Image(systemName: icon)
+                        .font(.system(size: 22))
+                        .foregroundColor(.white)
+                }
+                Text(label)
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundColor(.primary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity)
+            .scaleEffect(pressed ? 0.9 : 1.0)
         }
-        .frame(maxWidth: .infinity)
+        .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Group Pool Card
+
+struct GroupPoolCard: View {
+    let group: SUSUGroup
+    let theme: AppTheme
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: 20)
+                .fill(LinearGradient(
+                    colors: [theme.primary.opacity(0.85), theme.secondary.opacity(0.85)],
+                    startPoint: .topLeading, endPoint: .bottomTrailing
+                ))
+                .shadow(color: theme.primary.opacity(0.25), radius: 10, x: 0, y: 6)
+
+            // Decorative blob
+            Circle()
+                .fill(.white.opacity(0.07))
+                .frame(width: 140, height: 140)
+                .offset(x: 90, y: -30)
+
+            VStack(alignment: .leading, spacing: 0) {
+                HStack(alignment: .top) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(group.emoji)
+                            .font(.system(size: 30))
+                        Text(group.name)
+                            .font(.headline).bold()
+                            .foregroundColor(.white)
+                    }
+                    Spacer()
+                    if group.isPlusGroup {
+                        Text("PLUS")
+                            .font(.caption2).bold()
+                            .foregroundColor(theme.primary)
+                            .padding(.horizontal, 8)
+                            .padding(.vertical, 3)
+                            .background(.white)
+                            .cornerRadius(8)
+                    }
+                }
+
+                Spacer()
+
+                VStack(alignment: .leading, spacing: 6) {
+                    Text("POOL BALANCE")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundColor(.white.opacity(0.7))
+                        .tracking(1)
+                    Text(group.poolBalance.asCurrency)
+                        .font(.system(size: 28, weight: .black))
+                        .foregroundColor(.white)
+                }
+
+                Spacer(minLength: 10)
+
+                HStack {
+                    // Member avatars
+                    HStack(spacing: -8) {
+                        ForEach(group.members.prefix(4)) { member in
+                            Circle()
+                                .fill(Color(hex: member.colorHex) ?? theme.primary)
+                                .frame(width: 26, height: 26)
+                                .overlay(
+                                    Text(member.initials.prefix(2))
+                                        .font(.system(size: 8, weight: .bold))
+                                        .foregroundColor(.white)
+                                )
+                                .overlay(Circle().stroke(.white, lineWidth: 1.5))
+                        }
+                        if group.members.count > 4 {
+                            Circle()
+                                .fill(.white.opacity(0.3))
+                                .frame(width: 26, height: 26)
+                                .overlay(Text("+\(group.members.count - 4)").font(.system(size: 8, weight: .bold)).foregroundColor(.white))
+                                .overlay(Circle().stroke(.white, lineWidth: 1.5))
+                        }
+                    }
+                    Spacer()
+                    Text("\(group.members.count) members")
+                        .font(.caption)
+                        .foregroundColor(.white.opacity(0.8))
+                }
+            }
+            .padding(18)
+        }
+    }
+}
+
+// MARK: - Home Section Header
+
+struct HomeSection: View {
+    let title: String
+    var count: Int? = nil
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Text(title)
+                .font(.headline).bold()
+            if let count {
+                Text("\(count)")
+                    .font(.caption).bold()
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 7)
+                    .padding(.vertical, 2)
+                    .background(Color.secondary.opacity(0.12))
+                    .cornerRadius(8)
+            }
+            Spacer()
+        }
     }
 }
 
@@ -314,15 +568,20 @@ struct GoalCard: View {
     }
 }
 
-struct SectionHeader: View {
-    let title: String
-    var body: some View {
-        Text(title)
-            .font(.headline).fontWeight(.bold)
+// MARK: - Helpers
+
+extension Color {
+    init?(hex: String) {
+        var h = hex.trimmingCharacters(in: .whitespacesAndNewlines)
+        if h.hasPrefix("#") { h = String(h.dropFirst()) }
+        guard h.count == 6, let val = UInt64(h, radix: 16) else { return nil }
+        self.init(
+            red:   Double((val >> 16) & 0xFF) / 255,
+            green: Double((val >> 8)  & 0xFF) / 255,
+            blue:  Double(val         & 0xFF) / 255
+        )
     }
 }
-
-// MARK: - Helpers
 
 extension Double {
     var asCurrency: String {
