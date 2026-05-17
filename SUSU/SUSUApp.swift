@@ -9,9 +9,13 @@ import SwiftUI
 
 @main
 struct SUSUApp: App {
+    @StateObject private var themeManager = ThemeManager()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            MainTabView()
+                .environmentObject(themeManager)
+                .environment(\.theme, themeManager.current)
         }
     }
 }

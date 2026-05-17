@@ -7,15 +7,12 @@
 
 import SwiftUI
 
+// ContentView is replaced by MainTabView as the app entry point.
+// Kept for backward compatibility with Xcode preview infrastructure.
 struct ContentView: View {
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
+        MainTabView()
+            .environmentObject(ThemeManager())
     }
 }
 
