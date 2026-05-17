@@ -27,11 +27,7 @@ struct HomeView: View {
 
                         VStack(spacing: 22) {
                             quickActions
-                            if !appState.pendingProposals.isEmpty {
-                                attentionBanner
-                            }
                             groupCarousel
-                            goalsSummary
                             recentActivitySection
                             Spacer(minLength: 40)
                         }
@@ -162,35 +158,6 @@ struct HomeView: View {
 
     // MARK: - Attention Banner
 
-    var attentionBanner: some View {
-        HStack(spacing: 14) {
-            ZStack {
-                Circle().fill(theme.accent.opacity(0.15)).frame(width: 42, height: 42)
-                Image(systemName: "bell.badge.fill")
-                    .foregroundColor(theme.accent)
-                    .font(.system(size: 18))
-            }
-            VStack(alignment: .leading, spacing: 2) {
-                Text("\(appState.pendingProposals.count) Proposal\(appState.pendingProposals.count == 1 ? "" : "s") Need Your Vote")
-                    .font(.subheadline).bold()
-                Text(appState.pendingProposals.first?.title ?? "")
-                    .font(.caption).foregroundColor(.secondary)
-                    .lineLimit(1)
-            }
-            Spacer()
-            Image(systemName: "chevron.right")
-                .font(.caption).foregroundColor(.secondary)
-        }
-        .padding(14)
-        .background(theme.cardBackground)
-        .cornerRadius(16)
-        .overlay(
-            RoundedRectangle(cornerRadius: 16)
-                .stroke(theme.accent.opacity(0.3), lineWidth: 1.5)
-        )
-        .shadow(color: theme.accent.opacity(0.1), radius: 8, x: 0, y: 4)
-    }
-
     // MARK: - Group Carousel
 
     var groupCarousel: some View {
@@ -207,23 +174,6 @@ struct HomeView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .automatic))
             .frame(height: 185)
-        }
-    }
-
-    // MARK: - Goals Summary
-
-    var goalsSummary: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HomeSection(title: "Active Goals", count: appState.groups.flatMap(\.goals).count)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 14) {
-                    ForEach(appState.groups.flatMap(\.goals)) { goal in
-                        GoalCard(goal: goal, theme: theme)
-                    }
-                }
-                .padding(.horizontal, 2)
-                .padding(.vertical, 4)
-            }
         }
     }
 
