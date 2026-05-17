@@ -158,6 +158,33 @@ struct ProposalCard: View {
                     .foregroundColor(theme.primary)
             }
 
+            // Photo strip
+            if !proposal.photoURLs.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(proposal.photoURLs, id: \.self) { urlStr in
+                            AsyncImage(url: URL(string: urlStr)) { phase in
+                                switch phase {
+                                case .success(let img):
+                                    img.resizable().scaledToFill()
+                                case .failure:
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.gray.opacity(0.25))
+                                        .overlay(Image(systemName: "photo").foregroundColor(.gray))
+                                default:
+                                    RoundedRectangle(cornerRadius: 10)
+                                        .fill(Color.gray.opacity(0.1))
+                                        .overlay(ProgressView().scaleEffect(0.6))
+                                }
+                            }
+                            .frame(width: 130, height: 90)
+                            .clipShape(RoundedRectangle(cornerRadius: 10))
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+            }
+
             // Description
             if showDetails {
                 Text(proposal.description)
@@ -302,6 +329,8 @@ struct NewProposalView: View {
     @State private var amount = ""
     @State private var selectedGroupIndex = 0
     @State private var didSubmit = false
+    @State private var photoURLs: [String] = []
+    @State private var showPhotoPicker = false
 
     var body: some View {
         NavigationStack {
@@ -350,6 +379,52 @@ struct NewProposalView: View {
                             .cornerRadius(10)
                     }
 
+                    // Photos
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Photos", systemImage: "photo.on.rectangle.angled")
+                            .font(.subheadline).foregroundColor(.secondary)
+                        if !photoURLs.isEmpty {
+                            ScrollView(.horizontal, showsIndicators: false) {
+                                HStack(spacing: 8) {
+                                    ForEach(photoURLs, id: \.self) { url in
+                                        ZStack(alignment: .topTrailing) {
+                                            AsyncImage(url: URL(string: url)) { phase in
+                                                switch phase {
+                                                case .success(let img): img.resizable().scaledToFill()
+                                                default: Color.gray.opacity(0.2)
+                                                }
+                                            }
+                                            .frame(width: 80, height: 60)
+                                            .clipShape(RoundedRectangle(cornerRadius: 8))
+                                            Button {
+                                                photoURLs.removeAll { $0 == url }
+                                            } label: {
+                                                Image(systemName: "xmark.circle.fill")
+                                                    .font(.caption)
+                                                    .foregroundStyle(.white, Color.black.opacity(0.6))
+                                            }
+                                            .offset(x: 4, y: -4)
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        Button {
+                            showPhotoPicker = true
+                        } label: {
+                            HStack {
+                                Image(systemName: "plus.app")
+                                Text(photoURLs.isEmpty ? "Add Photos" : "Add More")
+                            }
+                            .font(.subheadline)
+                            .padding(10)
+                            .frame(maxWidth: .infinity)
+                            .background(theme.primary.opacity(0.07))
+                            .foregroundColor(theme.primary)
+                            .cornerRadius(10)
+                        }
+                    }
+
                     if didSubmit {
                         HStack(spacing: 8) {
                             Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
@@ -367,7 +442,8 @@ struct NewProposalView: View {
                         let proposal = Proposal(
                             id: UUID(), title: title, description: description,
                             amount: amountVal, proposedBy: "Dante (You)",
-                            votes: [], status: .pending, createdAt: Date()
+                            votes: [], status: .pending, createdAt: Date(),
+                            photoURLs: photoURLs
                         )
                         appState.addProposal(proposal, toGroup: targetGroup.id)
                         withAnimation { didSubmit = true }
@@ -390,6 +466,93 @@ struct NewProposalView: View {
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
                     Button("Cancel") { dismiss() }
+                }
+            }
+            .sheet(isPresented: $showPhotoPicker) {
+                PhotoPickerSheet(theme: theme, selectedURLs: $photoURLs)
+            }
+        }
+    }
+}
+
+// MARK: - Photo Picker Sheet
+
+struct PhotoPickerSheet: View {
+    let theme: AppTheme
+    @Binding var selectedURLs: [String]
+    @Environment(\.dismiss) var dismiss
+
+    let dummyPhotos: [(label: String, url: String)] = [
+        ("Birthday",   "https://picsum.photos/seed/birthday/400/300"),
+        ("Family",     "https://picsum.photos/seed/familyfun/400/300"),
+        ("Travel",     "https://picsum.photos/seed/travel2024/400/300"),
+        ("Restaurant", "https://picsum.photos/seed/restaurant/400/300"),
+        ("Apartment",  "https://picsum.photos/seed/apartment/400/300"),
+        ("Party",      "https://picsum.photos/seed/partynight/400/300"),
+        ("Beach",      "https://picsum.photos/seed/beachday/400/300"),
+        ("Hotel",      "https://picsum.photos/seed/hotel/400/300"),
+        ("Gift",       "https://picsum.photos/seed/giftbox/400/300"),
+        ("Vegas",      "https://picsum.photos/seed/vegas/400/300"),
+        ("Concert",    "https://picsum.photos/seed/concert/400/300"),
+        ("Graduation", "https://picsum.photos/seed/graduation/400/300"),
+    ]
+
+    let columns = [GridItem(.flexible()), GridItem(.flexible()), GridItem(.flexible())]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                LazyVGrid(columns: columns, spacing: 10) {
+                    ForEach(dummyPhotos, id: \.url) { photo in
+                        let isSelected = selectedURLs.contains(photo.url)
+                        ZStack(alignment: .bottom) {
+                            AsyncImage(url: URL(string: photo.url)) { phase in
+                                switch phase {
+                                case .success(let img):
+                                    img.resizable().scaledToFill()
+                                default:
+                                    Color.gray.opacity(0.2)
+                                        .overlay(ProgressView().scaleEffect(0.6))
+                                }
+                            }
+                            .frame(height: 100)
+                            .clipped()
+                            Text(photo.label)
+                                .font(.caption2).bold()
+                                .foregroundColor(.white)
+                                .padding(.vertical, 4)
+                                .frame(maxWidth: .infinity)
+                                .background(Color.black.opacity(0.45))
+                        }
+                        .cornerRadius(10)
+                        .overlay(
+                            ZStack(alignment: .topTrailing) {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(isSelected ? theme.primary : Color.clear, lineWidth: 3)
+                                if isSelected {
+                                    Image(systemName: "checkmark.circle.fill")
+                                        .foregroundStyle(.white, theme.primary)
+                                        .padding(6)
+                                }
+                            }
+                        )
+                        .onTapGesture {
+                            if isSelected {
+                                selectedURLs.removeAll { $0 == photo.url }
+                            } else {
+                                selectedURLs.append(photo.url)
+                            }
+                        }
+                    }
+                }
+                .padding()
+            }
+            .navigationTitle("Choose Photos")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(theme.primary)
                 }
             }
         }

@@ -83,6 +83,7 @@ struct Proposal: Identifiable {
     var votes: [Vote]
     var status: ProposalStatus
     var createdAt: Date
+    var photoURLs: [String] = []
 
     enum ProposalStatus: String {
         case pending = "Pending"
@@ -153,7 +154,12 @@ extension SUSUGroup {
                     Vote(id: UUID(), memberName: "Dad", choice: .approve),
                 ],
                 status: .pending,
-                createdAt: Calendar.current.date(byAdding: .day, value: -2, to: Date())!
+                createdAt: Calendar.current.date(byAdding: .day, value: -2, to: Date())!,
+                photoURLs: [
+                    "https://picsum.photos/seed/birthday/400/300",
+                    "https://picsum.photos/seed/flowers/400/300",
+                    "https://picsum.photos/seed/familyfun/400/300",
+                ]
             ),
             Proposal(
                 id: UUID(),
@@ -167,7 +173,11 @@ extension SUSUGroup {
                     Vote(id: UUID(), memberName: "Uncle James", choice: .approve),
                 ],
                 status: .approved,
-                createdAt: Calendar.current.date(byAdding: .day, value: -10, to: Date())!
+                createdAt: Calendar.current.date(byAdding: .day, value: -10, to: Date())!,
+                photoURLs: [
+                    "https://picsum.photos/seed/apartment/400/300",
+                    "https://picsum.photos/seed/keys/400/300",
+                ]
             ),
         ],
         transactions: [
@@ -206,7 +216,11 @@ extension SUSUGroup {
                     Vote(id: UUID(), memberName: "Dante (You)", choice: .approve),
                 ],
                 status: .pending,
-                createdAt: Calendar.current.date(byAdding: .day, value: -1, to: Date())!
+                createdAt: Calendar.current.date(byAdding: .day, value: -1, to: Date())!,
+                photoURLs: [
+                    "https://picsum.photos/seed/vegas/400/300",
+                    "https://picsum.photos/seed/hotel/400/300",
+                ]
             ),
         ],
         transactions: [
