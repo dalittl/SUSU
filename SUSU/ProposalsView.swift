@@ -46,6 +46,8 @@ struct ProposalsView: View {
                                 ForEach(allProposals, id: \.1.id) { group, proposal in
                                     ProposalCard(group: group, proposal: proposal, theme: theme) { choice in
                                         appState.vote(in: group.id, proposalID: proposal.id, choice: choice)
+                                    } onDelete: {
+                                        appState.deleteProposal(id: proposal.id, in: group.id)
                                     }
                                 }
                                 Spacer(minLength: 30)
@@ -121,8 +123,10 @@ struct ProposalCard: View {
     let proposal: Proposal
     let theme: AppTheme
     let onVote: (Vote.VoteChoice) -> Void
+    let onDelete: () -> Void
 
     @State private var showDetails = false
+    @State private var showDeleteConfirm = false
 
     var hasVoted: Bool {
         proposal.votes.contains { $0.memberName.contains("You") || $0.memberName == "Dante (You)" }
@@ -186,6 +190,13 @@ struct ProposalCard: View {
                     Text(showDetails ? "Less" : "More")
                         .font(.caption).foregroundColor(theme.primary)
                 }
+                Button {
+                    showDeleteConfirm = true
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.caption)
+                        .foregroundColor(.red.opacity(0.7))
+                }
             }
 
             // Vote buttons
@@ -228,6 +239,19 @@ struct ProposalCard: View {
         .background(theme.cardBackground)
         .cornerRadius(18)
         .shadow(color: theme.primary.opacity(0.08), radius: 8, x: 0, y: 4)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                onDelete()
+            } label: {
+                Label("Delete", systemImage: "trash")
+            }
+        }
+        .alert("Delete Proposal?", isPresented: $showDeleteConfirm) {
+            Button("Delete", role: .destructive) { onDelete() }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("\"\(proposal.title)\" will be permanently removed.")
+        }
     }
 }
 

@@ -73,6 +73,11 @@ class AppState: ObservableObject {
         groups[gi].proposals.insert(proposal, at: 0)
     }
 
+    func deleteProposal(id proposalID: UUID, in groupID: UUID) {
+        guard let gi = groups.firstIndex(where: { $0.id == groupID }) else { return }
+        groups[gi].proposals.removeAll { $0.id == proposalID }
+    }
+
     // MARK: - Groups
 
     func addGroup(_ group: SUSUGroup) {
