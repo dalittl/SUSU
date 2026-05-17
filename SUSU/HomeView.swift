@@ -36,17 +36,32 @@ struct HomeView: View {
                 }
             }
             .navigationBarHidden(true)
-            .fullScreenCover(isPresented: $showContribute) {
-                ContributeSheetView(theme: theme).environmentObject(appState)
+            .sheet(isPresented: $showContribute) {
+                ContributeSheetView(theme: theme)
+                    .environmentObject(appState)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
-            .fullScreenCover(isPresented: $showPropose) {
-                NewProposalView(theme: theme, groups: appState.groups).environmentObject(appState)
+            .sheet(isPresented: $showPropose) {
+                NewProposalView(theme: theme, groups: appState.groups)
+                    .environmentObject(appState)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
-            .fullScreenCover(isPresented: $showWithdraw) {
-                WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance).environmentObject(appState)
+            .sheet(isPresented: $showWithdraw) {
+                WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance)
+                    .environmentObject(appState)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
-            .fullScreenCover(isPresented: $showInvite) {
+            .sheet(isPresented: $showInvite) {
                 InviteView(theme: theme)
+                    .presentationDetents([.fraction(0.65)])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
             .onAppear {
                 withAnimation(.spring(response: 0.7, dampingFraction: 0.8).delay(0.2)) {

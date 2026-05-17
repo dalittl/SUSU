@@ -69,8 +69,12 @@ struct ProposalsView: View {
                     }
                 }
             }
-            .fullScreenCover(isPresented: $showNewProposal) {
+            .sheet(isPresented: $showNewProposal) {
                 NewProposalView(theme: theme, groups: appState.groups)
+                    .environmentObject(appState)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
         }
     }

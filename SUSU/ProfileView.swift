@@ -36,8 +36,18 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
-            .fullScreenCover(isPresented: $showBankLink) { BankLinkView(theme: theme) }
-            .fullScreenCover(isPresented: $showDebitCard) { DebitCardView(theme: theme) }
+            .sheet(isPresented: $showBankLink) {
+                BankLinkView(theme: theme)
+                    .presentationDetents([.fraction(0.72)])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
+            }
+            .sheet(isPresented: $showDebitCard) {
+                DebitCardView(theme: theme)
+                    .presentationDetents([.fraction(0.58)])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
+            }
             .sheet(isPresented: $showPrivacy) { LegalContentView(title: "Privacy Policy", isTerms: false) }
             .sheet(isPresented: $showTerms) { LegalContentView(title: "Terms of Service", isTerms: true) }
         }

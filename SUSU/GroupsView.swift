@@ -52,15 +52,21 @@ struct GroupsView: View {
             }
             .navigationTitle("My Groups")
             .navigationBarTitleDisplayMode(.large)
-            .fullScreenCover(item: $selectedGroup) { group in
+            .sheet(item: $selectedGroup) { group in
                 GroupDetailView(group: group)
                     .environmentObject(appState)
                     .environment(\.theme, theme)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
-            .fullScreenCover(isPresented: $showCreateGroup) {
+            .sheet(isPresented: $showCreateGroup) {
                 CreateGroupView()
                     .environmentObject(appState)
                     .environment(\.theme, theme)
+                    .presentationDetents([.fraction(0.82)])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
         }
     }

@@ -44,11 +44,19 @@ struct WalletView: View {
                     }
                 }
             }
-            .fullScreenCover(isPresented: $showContributeSheet) {
+            .sheet(isPresented: $showContributeSheet) {
                 ContributeSheetView(theme: theme)
+                    .environmentObject(appState)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
-            .fullScreenCover(isPresented: $showWithdrawSheet) {
+            .sheet(isPresented: $showWithdrawSheet) {
                 WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance)
+                    .environmentObject(appState)
+                    .presentationDetents([.large])
+                    .presentationDragIndicator(.visible)
+                    .presentationCornerRadius(28)
             }
         }
     }
