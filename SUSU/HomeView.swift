@@ -121,56 +121,12 @@ struct HomeView: View {
 
                 Spacer(minLength: 20)
 
-                // Wallet + Pooled card
-                HStack(spacing: 0) {
-                    // Wallet
-                    VStack(spacing: 6) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "wallet.pass.fill")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.7))
-                            Text("MY WALLET")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
-                                .tracking(1)
-                        }
-                        Text(walletVisible ? appState.myWalletBalance.asCurrency : "••••")
-                            .font(.system(size: 28, weight: .black))
-                            .foregroundColor(.white)
-                            .contentTransition(.numericText())
-                            .animation(.spring(response: 0.5), value: walletVisible)
-                    }
-                    .frame(maxWidth: .infinity)
-
-                    // Divider
-                    Rectangle()
-                        .fill(.white.opacity(0.25))
-                        .frame(width: 1, height: 50)
-
-                    // Pooled
-                    VStack(spacing: 6) {
-                        HStack(spacing: 4) {
-                            Image(systemName: "drop.fill")
-                                .font(.caption)
-                                .foregroundColor(.white.opacity(0.7))
-                            Text("TOTAL POOLED")
-                                .font(.system(size: 10, weight: .semibold))
-                                .foregroundColor(.white.opacity(0.7))
-                                .tracking(1)
-                        }
-                        Text(walletVisible ? appState.totalPoolBalance.asCurrency : "••••")
-                            .font(.system(size: 28, weight: .black))
-                            .foregroundColor(.white)
-                            .contentTransition(.numericText())
-                            .animation(.spring(response: 0.5).delay(0.1), value: walletVisible)
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .padding(.vertical, 20)
-                .padding(.horizontal, 10)
-                .background(.white.opacity(0.12))
-                .background(.ultraThinMaterial.opacity(0.3))
-                .cornerRadius(20)
+                // Debit card
+                SUSUDebitCard(
+                    walletBalance: walletVisible ? appState.myWalletBalance : nil,
+                    pooledBalance: walletVisible ? appState.totalPoolBalance : nil,
+                    theme: theme
+                )
                 .padding(.horizontal, 16)
 
                 // Pill stats row
@@ -456,6 +412,167 @@ struct GroupPoolCard: View {
             }
             .padding(18)
         }
+    }
+}
+
+// MARK: - Debit Card
+
+struct SUSUDebitCard: View {
+    let walletBalance: Double?
+    let pooledBalance: Double?
+    let theme: AppTheme
+
+    var body: some View {
+        ZStack {
+            // Card base — frosted glass over the hero gradient
+            RoundedRectangle(cornerRadius: 20)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .fill(
+                            LinearGradient(
+                                colors: [.white.opacity(0.22), .white.opacity(0.06)],
+                                startPoint: .topLeading,
+                                endPoint: .bottomTrailing
+                            )
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(.white.opacity(0.35), lineWidth: 1)
+                )
+                .shadow(color: .black.opacity(0.18), radius: 16, x: 0, y: 8)
+
+            // Holographic shimmer blobs
+            Circle()
+                .fill(.white.opacity(0.07))
+                .frame(width: 180, height: 180)
+                .offset(x: 80, y: -50)
+                .blur(radius: 2)
+            Circle()
+                .fill(.white.opacity(0.05))
+                .frame(width: 120, height: 120)
+                .offset(x: -60, y: 50)
+                .blur(radius: 1)
+
+            VStack(alignment: .leading, spacing: 0) {
+                // Row 1 — chip + SUSU logo
+                HStack(alignment: .center) {
+                    // EMV chip
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(
+                            LinearGradient(colors: [Color(hex: "#D4AF37"), Color(hex: "#F5D97E"), Color(hex: "#B8962E")],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                        .frame(width: 36, height: 28)
+                        .overlay(
+                            VStack(spacing: 3) {
+                                // chip lines
+                                RoundedRectangle(cornerRadius: 1).fill(.black.opacity(0.2)).frame(height: 1)
+                                HStack(spacing: 3) {
+                                    RoundedRectangle(cornerRadius: 1).fill(.black.opacity(0.2)).frame(width: 10, height: 8)
+                                    RoundedRectangle(cornerRadius: 1).fill(.black.opacity(0.2)).frame(width: 10, height: 8)
+                                }
+                                RoundedRectangle(cornerRadius: 1).fill(.black.opacity(0.2)).frame(height: 1)
+                            }
+                            .padding(3)
+                        )
+
+                    Spacer()
+
+                    // Brand name
+                    HStack(spacing: 4) {
+                        Image(systemName: "drop.fill")
+                            .font(.caption2)
+                            .foregroundColor(.white.opacity(0.9))
+                        Text("SUSU")
+                            .font(.system(size: 13, weight: .black))
+                            .tracking(3)
+                            .foregroundColor(.white)
+                    }
+                }
+
+                Spacer(minLength: 14)
+
+                // Row 2 — masked card number
+                HStack(spacing: 6) {
+                    ForEach(0..<3) { _ in
+                        HStack(spacing: 3) {
+                            ForEach(0..<4) { _ in
+                                Circle()
+                                    .fill(.white.opacity(0.7))
+                                    .frame(width: 5, height: 5)
+                            }
+                        }
+                    }
+                    Text("2026")
+                        .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                        .foregroundColor(.white.opacity(0.9))
+                        .tracking(2)
+                }
+
+                Spacer(minLength: 12)
+
+                // Row 3 — balances
+                HStack(alignment: .bottom) {
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("MY WALLET")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.65))
+                            .tracking(1.5)
+                        Text(walletBalance.map { $0.asCurrency } ?? "••••")
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundColor(.white)
+                            .contentTransition(.numericText())
+                    }
+
+                    Spacer()
+
+                    VStack(alignment: .trailing, spacing: 3) {
+                        Text("TOTAL POOLED")
+                            .font(.system(size: 8, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.65))
+                            .tracking(1.5)
+                        Text(pooledBalance.map { $0.asCurrency } ?? "••••")
+                            .font(.system(size: 22, weight: .black))
+                            .foregroundColor(.white)
+                            .contentTransition(.numericText())
+                    }
+                }
+
+                Spacer(minLength: 12)
+
+                // Row 4 — cardholder + network circles
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 1) {
+                        Text("CARD HOLDER")
+                            .font(.system(size: 7, weight: .semibold))
+                            .foregroundColor(.white.opacity(0.55))
+                            .tracking(1)
+                        Text("DANTE LITTLE")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundColor(.white.opacity(0.9))
+                            .tracking(1)
+                    }
+                    Spacer()
+                    // Network logo (Mastercard-style two circles)
+                    ZStack {
+                        Circle()
+                            .fill(Color.red.opacity(0.75))
+                            .frame(width: 26, height: 26)
+                            .offset(x: -9)
+                        Circle()
+                            .fill(Color.orange.opacity(0.75))
+                            .frame(width: 26, height: 26)
+                            .offset(x: 9)
+                    }
+                    .frame(width: 50, height: 26)
+                }
+            }
+            .padding(.horizontal, 20)
+            .padding(.vertical, 18)
+        }
+        .aspectRatio(1.586, contentMode: .fit)  // Standard card ratio
     }
 }
 
