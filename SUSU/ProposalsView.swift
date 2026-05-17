@@ -69,7 +69,7 @@ struct ProposalsView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showNewProposal) {
+            .fullScreenCover(isPresented: $showNewProposal) {
                 NewProposalView(theme: theme, groups: appState.groups)
             }
         }

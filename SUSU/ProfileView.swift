@@ -36,8 +36,8 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(isPresented: $showBankLink) { BankLinkView(theme: theme) }
-            .sheet(isPresented: $showDebitCard) { DebitCardView(theme: theme) }
+            .fullScreenCover(isPresented: $showBankLink) { BankLinkView(theme: theme) }
+            .fullScreenCover(isPresented: $showDebitCard) { DebitCardView(theme: theme) }
             .sheet(isPresented: $showPrivacy) { LegalContentView(title: "Privacy Policy", isTerms: false) }
             .sheet(isPresented: $showTerms) { LegalContentView(title: "Terms of Service", isTerms: true) }
         }

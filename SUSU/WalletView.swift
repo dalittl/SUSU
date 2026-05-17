@@ -44,10 +44,10 @@ struct WalletView: View {
                     }
                 }
             }
-            .sheet(isPresented: $showContributeSheet) {
+            .fullScreenCover(isPresented: $showContributeSheet) {
                 ContributeSheetView(theme: theme)
             }
-            .sheet(isPresented: $showWithdrawSheet) {
+            .fullScreenCover(isPresented: $showWithdrawSheet) {
                 WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance)
             }
         }

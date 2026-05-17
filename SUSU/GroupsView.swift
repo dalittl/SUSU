@@ -52,12 +52,12 @@ struct GroupsView: View {
             }
             .navigationTitle("My Groups")
             .navigationBarTitleDisplayMode(.large)
-            .sheet(item: $selectedGroup) { group in
+            .fullScreenCover(item: $selectedGroup) { group in
                 GroupDetailView(group: group)
                     .environmentObject(appState)
                     .environment(\.theme, theme)
             }
-            .sheet(isPresented: $showCreateGroup) {
+            .fullScreenCover(isPresented: $showCreateGroup) {
                 CreateGroupView()
                     .environmentObject(appState)
                     .environment(\.theme, theme)

@@ -36,16 +36,16 @@ struct HomeView: View {
                 }
             }
             .navigationBarHidden(true)
-            .sheet(isPresented: $showContribute) {
+            .fullScreenCover(isPresented: $showContribute) {
                 ContributeSheetView(theme: theme).environmentObject(appState)
             }
-            .sheet(isPresented: $showPropose) {
+            .fullScreenCover(isPresented: $showPropose) {
                 NewProposalView(theme: theme, groups: appState.groups).environmentObject(appState)
             }
-            .sheet(isPresented: $showWithdraw) {
+            .fullScreenCover(isPresented: $showWithdraw) {
                 WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance).environmentObject(appState)
             }
-            .sheet(isPresented: $showInvite) {
+            .fullScreenCover(isPresented: $showInvite) {
                 InviteView(theme: theme)
             }
             .onAppear {
