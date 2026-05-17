@@ -57,6 +57,11 @@ struct GroupsView: View {
                     .environmentObject(appState)
                     .environment(\.theme, theme)
             }
+            .sheet(isPresented: $showCreateGroup) {
+                CreateGroupView()
+                    .environmentObject(appState)
+                    .environment(\.theme, theme)
+            }
         }
     }
 }
@@ -283,5 +288,97 @@ struct GroupDetailView: View {
         .cornerRadius(16)
         .padding(.horizontal)
         .padding(.top, 4)
+    }
+}
+
+// MARK: - Create Group
+
+struct CreateGroupView: View {
+    @EnvironmentObject var appState: AppState
+    @Environment(\.theme) var theme
+    @Environment(\.dismiss) var dismiss
+    @State private var groupName = ""
+    @State private var selectedEmoji = "👨‍👩‍👧‍👦"
+
+    let emojis = ["👨‍👩‍👧‍👦", "🤝", "💼", "🎉", "❤️", "🏠", "✈️", "🎓", "💰", "🌍", "🌟", "🛡️"]
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(spacing: 24) {
+                    Text(selectedEmoji)
+                        .font(.system(size: 72))
+                        .padding(.top, 10)
+
+                    VStack(alignment: .leading, spacing: 8) {
+                        Label("Group Name", systemImage: "pencil")
+                            .font(.subheadline).foregroundColor(.secondary)
+                        TextField("e.g. Little Family Fund", text: $groupName)
+                            .padding(14)
+                            .background(theme.primary.opacity(0.07))
+                            .cornerRadius(12)
+                    }
+                    .padding(.horizontal)
+
+                    VStack(alignment: .leading, spacing: 10) {
+                        Label("Choose an Emoji", systemImage: "face.smiling")
+                            .font(.subheadline).foregroundColor(.secondary)
+                            .padding(.horizontal)
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 6), spacing: 12) {
+                            ForEach(emojis, id: \.self) { emoji in
+                                Button {
+                                    selectedEmoji = emoji
+                                } label: {
+                                    Text(emoji)
+                                        .font(.title2)
+                                        .padding(8)
+                                        .background(selectedEmoji == emoji ? theme.primary.opacity(0.18) : Color.clear)
+                                        .cornerRadius(8)
+                                        .overlay(
+                                            RoundedRectangle(cornerRadius: 8)
+                                                .stroke(selectedEmoji == emoji ? theme.primary : Color.clear, lineWidth: 2)
+                                        )
+                                }
+                            }
+                        }
+                        .padding(.horizontal)
+                    }
+
+                    Button {
+                        guard !groupName.isEmpty else { return }
+                        let newGroup = SUSUGroup(
+                            id: UUID(), name: groupName, emoji: selectedEmoji,
+                            members: [
+                                GroupMember(id: UUID(), name: "Dante (You)", initials: "DL",
+                                            role: .owner, walletBalance: 0, colorHex: "#1B6CA8")
+                            ],
+                            poolBalance: 0, goals: [], proposals: [], transactions: [],
+                            isPlusGroup: false, createdAt: Date()
+                        )
+                        appState.addGroup(newGroup)
+                        dismiss()
+                    } label: {
+                        Text("Create Group")
+                            .font(.headline).bold()
+                            .foregroundColor(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 16)
+                            .background(groupName.isEmpty ? Color.gray.opacity(0.4) : theme.primary)
+                            .cornerRadius(16)
+                    }
+                    .disabled(groupName.isEmpty)
+                    .padding(.horizontal)
+                    .padding(.bottom, 30)
+                }
+            }
+            .navigationTitle("New Group")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    Button("Cancel") { dismiss() }
+                        .foregroundColor(theme.primary)
+                }
+            }
+        }
     }
 }

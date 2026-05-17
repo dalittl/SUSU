@@ -31,4 +31,51 @@ class AppState: ObservableObject {
             groups[gi].proposals[pi].status = .approved
         }
     }
+
+    // MARK: - Wallet
+
+    func contribute(amount: Double, toGroup groupID: UUID? = nil) {
+        guard amount > 0 else { return }
+        currentUser.walletBalance += amount
+        currentUser.totalContributed += amount
+        let targetID = groupID ?? groups.first?.id
+        guard let gid = targetID,
+              let gi = groups.firstIndex(where: { $0.id == gid }) else { return }
+        let tx = GroupTransaction(
+            id: UUID(), description: "Manual contribution",
+            amount: amount, type: .contribution, date: Date(),
+            memberName: currentUser.name
+        )
+        groups[gi].transactions.insert(tx, at: 0)
+        groups[gi].poolBalance += amount
+        if let mi = groups[gi].members.firstIndex(where: { $0.name.contains("You") }) {
+            groups[gi].members[mi].walletBalance += amount
+        }
+    }
+
+    func withdraw(amount: Double) {
+        guard amount > 0, amount <= currentUser.walletBalance else { return }
+        currentUser.walletBalance -= amount
+        currentUser.totalDisbursed += amount
+        guard let gi = groups.indices.first else { return }
+        let tx = GroupTransaction(
+            id: UUID(), description: "Wallet withdrawal",
+            amount: -amount, type: .withdrawal, date: Date(),
+            memberName: currentUser.name
+        )
+        groups[gi].transactions.insert(tx, at: 0)
+    }
+
+    // MARK: - Proposals
+
+    func addProposal(_ proposal: Proposal, toGroup groupID: UUID) {
+        guard let gi = groups.firstIndex(where: { $0.id == groupID }) else { return }
+        groups[gi].proposals.insert(proposal, at: 0)
+    }
+
+    // MARK: - Groups
+
+    func addGroup(_ group: SUSUGroup) {
+        groups.append(group)
+    }
 }

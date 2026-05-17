@@ -271,11 +271,13 @@ struct StatusBadge: View {
 struct NewProposalView: View {
     let theme: AppTheme
     let groups: [SUSUGroup]
+    @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var title = ""
     @State private var description = ""
     @State private var amount = ""
     @State private var selectedGroupIndex = 0
+    @State private var didSubmit = false
 
     var body: some View {
         NavigationStack {
@@ -324,10 +326,30 @@ struct NewProposalView: View {
                             .cornerRadius(10)
                     }
 
+                    if didSubmit {
+                        HStack(spacing: 8) {
+                            Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
+                            Text("Proposal submitted!").font(.subheadline).foregroundColor(theme.secondary)
+                        }
+                        .padding()
+                        .background(theme.secondary.opacity(0.1))
+                        .cornerRadius(12)
+                        .transition(.scale.combined(with: .opacity))
+                    }
+
                     Button {
-                        dismiss()
+                        guard !title.isEmpty, let amountVal = Double(amount), amountVal > 0 else { return }
+                        let targetGroup = groups.indices.contains(selectedGroupIndex) ? groups[selectedGroupIndex] : groups[0]
+                        let proposal = Proposal(
+                            id: UUID(), title: title, description: description,
+                            amount: amountVal, proposedBy: "Dante (You)",
+                            votes: [], status: .pending, createdAt: Date()
+                        )
+                        appState.addProposal(proposal, toGroup: targetGroup.id)
+                        withAnimation { didSubmit = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
                     } label: {
-                        Text("Submit Proposal")
+                        Text(didSubmit ? "Submitted!" : "Submit Proposal")
                             .font(.headline).bold()
                             .foregroundColor(.white)
                             .frame(maxWidth: .infinity)
@@ -335,7 +357,7 @@ struct NewProposalView: View {
                             .background(title.isEmpty || amount.isEmpty ? Color.gray : theme.primary)
                             .cornerRadius(16)
                     }
-                    .disabled(title.isEmpty || amount.isEmpty)
+                    .disabled(title.isEmpty || amount.isEmpty || didSubmit)
                 }
                 .padding()
             }

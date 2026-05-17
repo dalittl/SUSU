@@ -8,6 +8,10 @@ import SwiftUI
 struct HomeView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.theme) var theme
+    @State private var showContribute = false
+    @State private var showPropose = false
+    @State private var showWithdraw = false
+    @State private var showInvite = false
 
     var body: some View {
         NavigationStack {
@@ -28,6 +32,18 @@ struct HomeView: View {
                 }
             }
             .navigationBarHidden(true)
+            .sheet(isPresented: $showContribute) {
+                ContributeSheetView(theme: theme).environmentObject(appState)
+            }
+            .sheet(isPresented: $showPropose) {
+                NewProposalView(theme: theme, groups: appState.groups).environmentObject(appState)
+            }
+            .sheet(isPresented: $showWithdraw) {
+                WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance).environmentObject(appState)
+            }
+            .sheet(isPresented: $showInvite) {
+                InviteView(theme: theme)
+            }
         }
     }
 
@@ -107,10 +123,10 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             SectionHeader(title: "Quick Actions")
             HStack(spacing: 12) {
-                QuickActionButton(icon: "plus.circle.fill", label: "Contribute", color: theme.primary) {}
-                QuickActionButton(icon: "lightbulb.fill", label: "Propose", color: theme.secondary) {}
-                QuickActionButton(icon: "arrow.down.circle.fill", label: "Withdraw", color: theme.accent) {}
-                QuickActionButton(icon: "person.badge.plus", label: "Invite", color: theme.textSecondary) {}
+                QuickActionButton(icon: "plus.circle.fill", label: "Contribute", color: theme.primary) { showContribute = true }
+                QuickActionButton(icon: "lightbulb.fill", label: "Propose", color: theme.secondary) { showPropose = true }
+                QuickActionButton(icon: "arrow.down.circle.fill", label: "Withdraw", color: theme.accent) { showWithdraw = true }
+                QuickActionButton(icon: "person.badge.plus", label: "Invite", color: theme.textSecondary) { showInvite = true }
             }
         }
     }
@@ -323,5 +339,82 @@ extension Date {
         if diff < 3600 { return "\(Int(diff / 60))m ago" }
         if diff < 86400 { return "\(Int(diff / 3600))h ago" }
         return "\(Int(diff / 86400))d ago"
+    }
+}
+
+// MARK: - Invite View
+
+struct InviteView: View {
+    let theme: AppTheme
+    @Environment(\.dismiss) var dismiss
+    @State private var copied = false
+
+    let inviteLink = "https://susu.app/invite/DL-ABC123"
+
+    var body: some View {
+        NavigationStack {
+            VStack(spacing: 24) {
+                Image(systemName: "person.badge.plus")
+                    .font(.system(size: 64))
+                    .foregroundColor(theme.primary)
+                    .padding(.top, 30)
+
+                Text("Invite Someone")
+                    .font(.title2).bold()
+
+                Text("Share this link to bring someone into one of your SUSU groups.")
+                    .font(.subheadline).foregroundColor(.secondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+
+                HStack {
+                    Text(inviteLink)
+                        .font(.caption)
+                        .foregroundColor(theme.primary)
+                        .lineLimit(1)
+                        .truncationMode(.middle)
+                    Spacer()
+                    Button {
+                        UIPasteboard.general.string = inviteLink
+                        withAnimation { copied = true }
+                        DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
+                            withAnimation { copied = false }
+                        }
+                    } label: {
+                        Text(copied ? "Copied!" : "Copy")
+                            .font(.caption).bold()
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 10).padding(.vertical, 6)
+                            .background(copied ? theme.secondary : theme.primary)
+                            .cornerRadius(8)
+                    }
+                }
+                .padding()
+                .background(theme.primary.opacity(0.07))
+                .cornerRadius(12)
+                .padding(.horizontal)
+
+                ShareLink(item: inviteLink) {
+                    Label("Share Link", systemImage: "square.and.arrow.up")
+                        .font(.headline).bold()
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 16)
+                        .background(theme.primary)
+                        .cornerRadius(16)
+                }
+                .padding(.horizontal)
+
+                Spacer()
+            }
+            .navigationTitle("Invite")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button("Done") { dismiss() }
+                        .foregroundColor(theme.primary)
+                }
+            }
+        }
     }
 }

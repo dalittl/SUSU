@@ -8,7 +8,6 @@ import SwiftUI
 struct WalletView: View {
     @EnvironmentObject var appState: AppState
     @Environment(\.theme) var theme
-    @State private var roundUpEnabled = true
     @State private var showContributeSheet = false
     @State private var showWithdrawSheet = false
 
@@ -136,7 +135,7 @@ struct WalletView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             Spacer()
-            Toggle("", isOn: $roundUpEnabled)
+            Toggle("", isOn: $appState.currentUser.roundUpEnabled)
                 .tint(theme.primary)
         }
         .padding(16)
@@ -215,16 +214,21 @@ struct WalletView: View {
 
 struct ContributeSheetView: View {
     let theme: AppTheme
+    @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var amount = ""
     @State private var selectedType = 0
+    @State private var selectedGroupIndex = 0
+    @State private var didContribute = false
+
+    var parsedAmount: Double { Double(amount) ?? 0 }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
-                Text("$\(amount.isEmpty ? "0.00" : amount)")
+            VStack(spacing: 20) {
+                Text(parsedAmount > 0 ? parsedAmount.asCurrency : "$0.00")
                     .font(.system(size: 52, weight: .black))
-                    .foregroundColor(theme.primary)
+                    .foregroundColor(parsedAmount > 0 ? theme.primary : .secondary)
 
                 Picker("", selection: $selectedType) {
                     Text("One-Time").tag(0)
@@ -233,21 +237,55 @@ struct ContributeSheetView: View {
                 .pickerStyle(.segmented)
                 .padding(.horizontal)
 
-                // Numpad
+                if appState.groups.count > 1 {
+                    HStack {
+                        Text("Group:")
+                            .font(.subheadline).foregroundColor(.secondary)
+                        Picker("Group", selection: $selectedGroupIndex) {
+                            ForEach(appState.groups.indices, id: \.self) { i in
+                                Text("\(appState.groups[i].emoji) \(appState.groups[i].name)").tag(i)
+                            }
+                        }
+                        .pickerStyle(.menu)
+                        .tint(theme.primary)
+                    }
+                    .padding(.horizontal)
+                }
+
                 NumberPad(value: $amount, theme: theme)
 
+                if didContribute {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
+                        Text("\(parsedAmount.asCurrency) contributed!")
+                            .font(.subheadline).foregroundColor(theme.secondary)
+                    }
+                    .padding()
+                    .background(theme.secondary.opacity(0.1))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
+                    .transition(.scale.combined(with: .opacity))
+                }
+
                 Button {
-                    dismiss()
+                    guard parsedAmount > 0 else { return }
+                    let gid = appState.groups.indices.contains(selectedGroupIndex)
+                        ? appState.groups[selectedGroupIndex].id
+                        : appState.groups[0].id
+                    appState.contribute(amount: parsedAmount, toGroup: gid)
+                    withAnimation { didContribute = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
                 } label: {
-                    Text("Contribute")
+                    Text(didContribute ? "Done!" : "Contribute")
                         .font(.headline).bold()
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(theme.primary)
+                        .background(parsedAmount > 0 ? theme.primary : Color.gray.opacity(0.4))
                         .cornerRadius(16)
                         .padding(.horizontal)
                 }
+                .disabled(parsedAmount <= 0 || didContribute)
             }
             .padding(.top)
             .navigationTitle("Contribute")
@@ -266,22 +304,35 @@ struct ContributeSheetView: View {
 struct WithdrawSheetView: View {
     let theme: AppTheme
     let balance: Double
+    @EnvironmentObject var appState: AppState
     @Environment(\.dismiss) var dismiss
     @State private var amount = ""
+    @State private var didWithdraw = false
+
+    var parsedAmount: Double { Double(amount) ?? 0 }
+    var isOverLimit: Bool { parsedAmount > appState.currentUser.walletBalance }
 
     var body: some View {
         NavigationStack {
-            VStack(spacing: 24) {
+            VStack(spacing: 20) {
                 VStack(spacing: 4) {
-                    Text("Available: \(balance.asCurrency)")
+                    Text("Available: \(appState.currentUser.walletBalance.asCurrency)")
                         .font(.caption)
                         .foregroundColor(.secondary)
-                    Text("$\(amount.isEmpty ? "0.00" : amount)")
+                    Text(parsedAmount > 0 ? parsedAmount.asCurrency : "$0.00")
                         .font(.system(size: 52, weight: .black))
-                        .foregroundColor(theme.primary)
+                        .foregroundColor(isOverLimit ? .red : (parsedAmount > 0 ? theme.primary : .secondary))
                 }
 
-                Text("Funds will be sent via ACH to your linked bank within 1-2 business days.")
+                if isOverLimit {
+                    HStack(spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.red)
+                        Text("Exceeds your available balance.").font(.caption).foregroundColor(.red)
+                    }
+                    .transition(.opacity)
+                }
+
+                Text("Funds sent via ACH to your linked bank within 1-2 business days.")
                     .font(.caption)
                     .foregroundColor(.secondary)
                     .multilineTextAlignment(.center)
@@ -289,18 +340,35 @@ struct WithdrawSheetView: View {
 
                 NumberPad(value: $amount, theme: theme)
 
+                if didWithdraw {
+                    HStack(spacing: 8) {
+                        Image(systemName: "checkmark.circle.fill").foregroundColor(theme.secondary)
+                        Text("Withdrawal of \(parsedAmount.asCurrency) initiated!")
+                            .font(.subheadline).foregroundColor(theme.secondary)
+                    }
+                    .padding()
+                    .background(theme.secondary.opacity(0.1))
+                    .cornerRadius(12)
+                    .padding(.horizontal)
+                    .transition(.scale.combined(with: .opacity))
+                }
+
                 Button {
-                    dismiss()
+                    guard parsedAmount > 0, !isOverLimit else { return }
+                    appState.withdraw(amount: parsedAmount)
+                    withAnimation { didWithdraw = true }
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 1.2) { dismiss() }
                 } label: {
-                    Text("Withdraw Funds")
+                    Text(didWithdraw ? "Done!" : "Withdraw Funds")
                         .font(.headline).bold()
                         .foregroundColor(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 16)
-                        .background(theme.primary)
+                        .background(parsedAmount > 0 && !isOverLimit ? theme.primary : Color.gray.opacity(0.4))
                         .cornerRadius(16)
                         .padding(.horizontal)
                 }
+                .disabled(parsedAmount <= 0 || isOverLimit || didWithdraw)
             }
             .padding(.top)
             .navigationTitle("Withdraw")
