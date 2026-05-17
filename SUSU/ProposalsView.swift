@@ -69,7 +69,7 @@ struct ProposalsView: View {
                     }
                 }
             }
-            .popupCard(isPresented: $showNewProposal) {
+            .navigationDestination(isPresented: $showNewProposal) {
                 NewProposalView(theme: theme, groups: appState.groups)
                     .environmentObject(appState)
             }
@@ -336,19 +336,6 @@ struct NewProposalView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                // Card header
-                HStack {
-                    Button("Cancel") { dismiss() }
-                        .foregroundColor(theme.primary)
-                    Spacer()
-                    Text("New Proposal")
-                        .font(.headline).bold()
-                    Spacer()
-                    Button("Cancel") { dismiss() }.hidden()
-                }
-                .padding(.horizontal)
-                .padding(.top, 20)
-
                 VStack(alignment: .leading, spacing: 8) {
                     Label("Group", systemImage: "person.3.fill")
                         .font(.subheadline).foregroundColor(.secondary)
@@ -477,6 +464,13 @@ struct NewProposalView: View {
         }
         .sheet(isPresented: $showPhotoPicker) {
             PhotoPickerSheet(theme: theme, selectedURLs: $photoURLs)
+        }
+        .navigationTitle("New Proposal")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") { dismiss() }
+            }
         }
     }
 }

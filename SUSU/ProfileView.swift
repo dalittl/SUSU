@@ -36,10 +36,10 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .navigationBarTitleDisplayMode(.large)
-            .popupCard(isPresented: $showBankLink) {
+            .navigationDestination(isPresented: $showBankLink) {
                 BankLinkView(theme: theme)
             }
-            .popupCard(isPresented: $showDebitCard) {
+            .navigationDestination(isPresented: $showDebitCard) {
                 DebitCardView(theme: theme)
             }
             .sheet(isPresented: $showPrivacy) { LegalContentView(title: "Privacy Policy", isTerms: false) }
@@ -289,18 +289,6 @@ struct BankLinkView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Card header
-            HStack {
-                Button("Done") { dismiss() }.hidden()
-                Spacer()
-                Text("Bank Account")
-                    .font(.headline).bold()
-                Spacer()
-                Button("Done") { dismiss() }.foregroundColor(theme.primary)
-            }
-            .padding(.horizontal)
-            .padding(.top, 20)
-
             Image(systemName: "building.columns.fill")
                 .font(.system(size: 60))
                 .foregroundColor(theme.primary)
@@ -346,6 +334,14 @@ struct BankLinkView: View {
                 .padding(.horizontal)
                 .padding(.bottom, 24)
         }
+        .padding(.top)
+        .navigationTitle("Bank Account")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") { dismiss() }.foregroundColor(theme.primary)
+            }
+        }
     }
 }
 
@@ -358,18 +354,6 @@ struct DebitCardView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Card header
-                HStack {
-                    Button("Done") { dismiss() }.hidden()
-                    Spacer()
-                    Text("SUSU Debit Card")
-                        .font(.headline).bold()
-                    Spacer()
-                    Button("Done") { dismiss() }.foregroundColor(theme.primary)
-                }
-                .padding(.horizontal)
-                .padding(.top, 20)
-
                 ZStack {
                     RoundedRectangle(cornerRadius: 20)
                         .fill(LinearGradient(colors: [theme.primary, theme.secondary],
@@ -420,6 +404,13 @@ struct DebitCardView: View {
                         .background(theme.primary).cornerRadius(16).padding(.horizontal)
                 }
                 .padding(.bottom, 24)
+            }
+        }
+        .navigationTitle("SUSU Debit Card")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") { dismiss() }.foregroundColor(theme.primary)
             }
         }
     }

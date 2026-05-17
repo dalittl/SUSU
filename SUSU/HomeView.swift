@@ -36,19 +36,19 @@ struct HomeView: View {
                 }
             }
             .navigationBarHidden(true)
-            .popupCard(isPresented: $showContribute) {
+            .navigationDestination(isPresented: $showContribute) {
                 ContributeSheetView(theme: theme)
                     .environmentObject(appState)
             }
-            .popupCard(isPresented: $showPropose) {
+            .navigationDestination(isPresented: $showPropose) {
                 NewProposalView(theme: theme, groups: appState.groups)
                     .environmentObject(appState)
             }
-            .popupCard(isPresented: $showWithdraw) {
+            .navigationDestination(isPresented: $showWithdraw) {
                 WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance)
                     .environmentObject(appState)
             }
-            .popupCard(isPresented: $showInvite) {
+            .navigationDestination(isPresented: $showInvite) {
                 InviteView(theme: theme)
             }
             .onAppear {
@@ -723,19 +723,6 @@ struct InviteView: View {
 
     var body: some View {
         VStack(spacing: 24) {
-            // Card header
-            HStack {
-                Button("Done") { dismiss() }.hidden()
-                Spacer()
-                Text("Invite")
-                    .font(.headline).bold()
-                Spacer()
-                Button("Done") { dismiss() }
-                    .foregroundColor(theme.primary)
-            }
-            .padding(.horizontal)
-            .padding(.top, 20)
-
             Image(systemName: "person.badge.plus")
                 .font(.system(size: 64))
                 .foregroundColor(theme.primary)
@@ -786,6 +773,14 @@ struct InviteView: View {
             }
             .padding(.horizontal)
             .padding(.bottom, 20)
+        }
+        .padding(.top)
+        .navigationTitle("Invite")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") { dismiss() }.foregroundColor(theme.primary)
+            }
         }
     }
 }

@@ -56,14 +56,14 @@ struct GroupsView: View {
             }
             .navigationTitle("My Groups")
             .navigationBarTitleDisplayMode(.large)
-            .popupCard(isPresented: $showGroupDetail) {
+            .navigationDestination(isPresented: $showGroupDetail) {
                 if let group = selectedGroup {
                     GroupDetailView(group: group)
                         .environmentObject(appState)
                         .environment(\.theme, theme)
                 }
             }
-            .popupCard(isPresented: $showCreateGroup) {
+            .navigationDestination(isPresented: $showCreateGroup) {
                 CreateGroupView()
                     .environmentObject(appState)
                     .environment(\.theme, theme)
@@ -174,17 +174,6 @@ struct GroupDetailView: View {
 
     var body: some View {
         VStack(spacing: 0) {
-            // Card header
-            HStack {
-                Text(group.emoji).font(.title3)
-                Text(group.name).font(.headline).bold()
-                Spacer()
-                Button("Done") { dismiss() }
-                    .foregroundColor(theme.primary)
-            }
-            .padding(.horizontal, 20)
-            .padding(.vertical, 16)
-
             // Pool balance banner
             ZStack {
                 LinearGradient(colors: [theme.primary, theme.secondary],
@@ -216,6 +205,13 @@ struct GroupDetailView: View {
                 }
             }
             .frame(maxHeight: 380)
+        }
+        .navigationTitle(group.name)
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button("Done") { dismiss() }.foregroundColor(theme.primary)
+            }
         }
     }
 
@@ -309,19 +305,6 @@ struct CreateGroupView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
-                // Card header
-                HStack {
-                    Button("Cancel") { dismiss() }
-                        .foregroundColor(theme.primary)
-                    Spacer()
-                    Text("New Group")
-                        .font(.headline).bold()
-                    Spacer()
-                    Button("Cancel") { dismiss() }.hidden()
-                }
-                .padding(.horizontal)
-                .padding(.top, 20)
-
                 Text(selectedEmoji)
                     .font(.system(size: 72))
 
@@ -384,6 +367,13 @@ struct CreateGroupView: View {
                 .disabled(groupName.isEmpty)
                 .padding(.horizontal)
                 .padding(.bottom, 24)
+            }
+        }
+        .navigationTitle("New Group")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") { dismiss() }.foregroundColor(theme.primary)
             }
         }
     }

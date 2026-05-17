@@ -44,11 +44,11 @@ struct WalletView: View {
                     }
                 }
             }
-            .popupCard(isPresented: $showContributeSheet) {
+            .navigationDestination(isPresented: $showContributeSheet) {
                 ContributeSheetView(theme: theme)
                     .environmentObject(appState)
             }
-            .popupCard(isPresented: $showWithdrawSheet) {
+            .navigationDestination(isPresented: $showWithdrawSheet) {
                 WithdrawSheetView(theme: theme, balance: appState.currentUser.walletBalance)
                     .environmentObject(appState)
             }
@@ -227,19 +227,6 @@ struct ContributeSheetView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Card header
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .foregroundColor(theme.primary)
-                Spacer()
-                Text("Contribute")
-                    .font(.headline).bold()
-                Spacer()
-                Button("Cancel") { dismiss() }.hidden()
-            }
-            .padding(.horizontal)
-            .padding(.top, 20)
-
             Text(parsedAmount > 0 ? parsedAmount.asCurrency : "$0.00")
                 .font(.system(size: 52, weight: .black))
                 .foregroundColor(parsedAmount > 0 ? theme.primary : .secondary)
@@ -301,7 +288,15 @@ struct ContributeSheetView: View {
             }
             .disabled(parsedAmount <= 0 || didContribute)
         }
+        .padding(.top)
         .padding(.bottom, 20)
+        .navigationTitle("Contribute")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") { dismiss() }
+            }
+        }
     }
 }
 
@@ -320,19 +315,6 @@ struct WithdrawSheetView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            // Card header
-            HStack {
-                Button("Cancel") { dismiss() }
-                    .foregroundColor(theme.primary)
-                Spacer()
-                Text("Withdraw")
-                    .font(.headline).bold()
-                Spacer()
-                Button("Cancel") { dismiss() }.hidden()
-            }
-            .padding(.horizontal)
-            .padding(.top, 20)
-
             VStack(spacing: 4) {
                 Text("Available: \(appState.currentUser.walletBalance.asCurrency)")
                     .font(.caption)
@@ -388,7 +370,15 @@ struct WithdrawSheetView: View {
             }
             .disabled(parsedAmount <= 0 || isOverLimit || didWithdraw)
         }
+        .padding(.top)
         .padding(.bottom, 20)
+        .navigationTitle("Withdraw")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") { dismiss() }
+            }
+        }
     }
 }
 
