@@ -431,7 +431,7 @@ struct GroupPoolCard: View {
                     HStack(spacing: -8) {
                         ForEach(group.members.prefix(4)) { member in
                             Circle()
-                                .fill(Color(hex: member.colorHex) ?? theme.primary)
+                                .fill(Color(hex: member.colorHex))
                                 .frame(width: 26, height: 26)
                                 .overlay(
                                     Text(member.initials.prefix(2))
@@ -569,19 +569,6 @@ struct GoalCard: View {
 }
 
 // MARK: - Helpers
-
-extension Color {
-    init?(hex: String) {
-        var h = hex.trimmingCharacters(in: .whitespacesAndNewlines)
-        if h.hasPrefix("#") { h = String(h.dropFirst()) }
-        guard h.count == 6, let val = UInt64(h, radix: 16) else { return nil }
-        self.init(
-            red:   Double((val >> 16) & 0xFF) / 255,
-            green: Double((val >> 8)  & 0xFF) / 255,
-            blue:  Double(val         & 0xFF) / 255
-        )
-    }
-}
 
 extension Double {
     var asCurrency: String {
