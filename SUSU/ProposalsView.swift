@@ -28,7 +28,7 @@ struct ProposalsView: View {
                 VStack(spacing: 0) {
                     filterBar
                         .padding(.horizontal)
-                        .padding(.top, 2)
+                        .padding(.top, -6)
                         .padding(.bottom, 6)
 
                     if allProposals.isEmpty {
@@ -55,14 +55,14 @@ struct ProposalsView: View {
                                 Spacer(minLength: 30)
                             }
                             .padding(.horizontal)
-                            .padding(.top, 4)
+                            .padding(.top, 0)
                             .padding(.bottom, 16)
                         }
                     }
                 }
             }
             .navigationTitle("Proposals")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(theme.primary.opacity(0.18), for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

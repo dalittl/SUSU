@@ -26,12 +26,12 @@ struct WalletView: View {
                         Spacer(minLength: 30)
                     }
                     .padding(.horizontal)
-                    .padding(.top, 4)
+                    .padding(.top, -8)
                     .padding(.bottom, 16)
                 }
             }
             .navigationTitle("My Wallet")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(theme.primary.opacity(0.18), for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {

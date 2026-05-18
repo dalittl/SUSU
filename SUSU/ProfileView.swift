@@ -32,12 +32,12 @@ struct ProfileView: View {
                         Spacer(minLength: 30)
                     }
                     .padding(.horizontal)
-                    .padding(.top, 4)
+                    .padding(.top, -8)
                     .padding(.bottom, 16)
                 }
             }
             .navigationTitle("Profile")
-            .navigationBarTitleDisplayMode(.large)
+            .navigationBarTitleDisplayMode(.inline)
             .navigationDestination(isPresented: $showBankLink) {
                 BankLinkView(theme: theme)
             }
