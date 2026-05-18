@@ -249,6 +249,7 @@ struct GroupDetailView: View {
     @Environment(\.theme) var theme
     @Environment(\.dismiss) var dismiss
     @State private var selectedTab = 0
+    @State private var selectedGroupID: UUID?
     @State private var selectedMember: GroupMember?
     @State private var showMemberProfile = false
     @State private var expandedComments: Set<UUID> = []
@@ -256,28 +257,82 @@ struct GroupDetailView: View {
 
     private let tabItems = ["Members", "Goals", "Activity", "Board"]
 
-    private var ownerCount: Int { group.members.filter { $0.role == .owner }.count }
-    private var trusteeCount: Int { group.members.filter { $0.role == .trustee }.count }
-    private var memberCount: Int { group.members.filter { $0.role == .member }.count }
+    private var currentGroup: SUSUGroup {
+        if let selectedGroupID,
+           let found = appState.groups.first(where: { $0.id == selectedGroupID }) {
+            return found
+        }
+        return group
+    }
 
-    private var totalGoalTarget: Double { group.goals.reduce(0) { $0 + $1.targetAmount } }
-    private var totalGoalCurrent: Double { group.goals.reduce(0) { $0 + $1.currentAmount } }
+    private var ownerCount: Int { currentGroup.members.filter { $0.role == .owner }.count }
+    private var trusteeCount: Int { currentGroup.members.filter { $0.role == .trustee }.count }
+    private var memberCount: Int { currentGroup.members.filter { $0.role == .member }.count }
+
+    private var totalGoalTarget: Double { currentGroup.goals.reduce(0) { $0 + $1.targetAmount } }
+    private var totalGoalCurrent: Double { currentGroup.goals.reduce(0) { $0 + $1.currentAmount } }
     private var goalProgress: Double {
         guard totalGoalTarget > 0 else { return 0 }
         return min(totalGoalCurrent / totalGoalTarget, 1)
     }
 
-    private var contributionTxCount: Int { group.transactions.filter { $0.amount > 0 }.count }
-    private var disbursementTxCount: Int { group.transactions.filter { $0.amount < 0 }.count }
+    private var contributionTxCount: Int { currentGroup.transactions.filter { $0.amount > 0 }.count }
+    private var disbursementTxCount: Int { currentGroup.transactions.filter { $0.amount < 0 }.count }
 
-    private var boardPollCount: Int { group.boardPosts.filter { $0.type == .poll }.count }
-    private var boardCommentCount: Int { group.boardPosts.reduce(0) { $0 + $1.comments.count } }
+    private var boardPollCount: Int { currentGroup.boardPosts.filter { $0.type == .poll }.count }
+    private var boardCommentCount: Int { currentGroup.boardPosts.reduce(0) { $0 + $1.comments.count } }
 
     var body: some View {
         ZStack {
             theme.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
+                HStack {
+                    Menu {
+                        ForEach(appState.groups) { option in
+                            Button {
+                                selectedGroupID = option.id
+                                selectedMember = nil
+                                showMemberProfile = false
+                                expandedComments.removeAll()
+                            } label: {
+                                HStack {
+                                    Text("\(option.emoji) \(option.name)")
+                                    if option.id == currentGroup.id {
+                                        Spacer()
+                                        Image(systemName: "checkmark")
+                                    }
+                                }
+                            }
+                        }
+                    } label: {
+                        HStack(spacing: 6) {
+                            Text("\(currentGroup.emoji) \(currentGroup.name)")
+                                .font(.subheadline).bold()
+                                .lineLimit(1)
+                            Image(systemName: "chevron.down")
+                                .font(.caption)
+                        }
+                        .foregroundColor(theme.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 8)
+                        .background(theme.primary.opacity(0.08))
+                        .cornerRadius(10)
+                    }
+
+                    Spacer()
+
+                    Text(currentGroup.poolBalance.asCurrency)
+                        .font(.caption).bold()
+                        .foregroundColor(theme.primary)
+                        .padding(.horizontal, 10)
+                        .padding(.vertical, 6)
+                        .background(theme.primary.opacity(0.08))
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal, 16)
+                .padding(.top, 8)
+
                 // Custom tab selector
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
@@ -334,7 +389,7 @@ struct GroupDetailView: View {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
-        .navigationTitle(group.name)
+        .navigationTitle(currentGroup.name)
         .navigationBarTitleDisplayMode(.inline)
         .toolbarBackground(theme.primary, for: .navigationBar)
         .toolbarColorScheme(.dark, for: .navigationBar)
@@ -345,8 +400,13 @@ struct GroupDetailView: View {
         }
         .navigationDestination(isPresented: $showMemberProfile) {
             if let member = selectedMember {
-                MemberProfileView(member: member, group: group)
+                MemberProfileView(member: member, group: currentGroup)
                     .environment(\.theme, theme)
+            }
+        }
+        .onAppear {
+            if selectedGroupID == nil {
+                selectedGroupID = group.id
             }
         }
     }
@@ -383,7 +443,7 @@ struct GroupDetailView: View {
             }
             .padding(.horizontal)
 
-            ForEach(group.members) { member in
+            ForEach(currentGroup.members) { member in
                 Button {
                     selectedMember = member
                     showMemberProfile = true
@@ -445,7 +505,7 @@ struct GroupDetailView: View {
                     Text("of \(totalGoalTarget.asCurrency)")
                         .font(.caption).foregroundColor(.secondary)
                     Spacer()
-                    Text("\(group.goals.count) goals")
+                    Text("\(currentGroup.goals.count) goals")
                         .font(.caption2)
                         .foregroundColor(.secondary)
                 }
@@ -459,7 +519,7 @@ struct GroupDetailView: View {
             )
             .padding(.horizontal)
 
-            ForEach(group.goals) { goal in
+            ForEach(currentGroup.goals) { goal in
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
                         Text(goal.emoji + " " + goal.title)
@@ -506,12 +566,12 @@ struct GroupDetailView: View {
             HStack(spacing: 10) {
                 tabWidget(icon: "arrow.up.circle.fill", title: "Inflow", value: "\(contributionTxCount)")
                 tabWidget(icon: "arrow.down.circle.fill", title: "Outflow", value: "\(disbursementTxCount)")
-                tabWidget(icon: "clock.fill", title: "Total", value: "\(group.transactions.count)")
+                tabWidget(icon: "clock.fill", title: "Total", value: "\(currentGroup.transactions.count)")
             }
             .padding(.horizontal)
 
             VStack(spacing: 0) {
-                ForEach(group.transactions.sorted { $0.date > $1.date }) { tx in
+                ForEach(currentGroup.transactions.sorted { $0.date > $1.date }) { tx in
                     TransactionRow(tx: tx, theme: theme)
                     Divider().padding(.leading, 52)
                 }
@@ -531,13 +591,13 @@ struct GroupDetailView: View {
     var boardTab: some View {
         VStack(spacing: 14) {
             HStack(spacing: 10) {
-                tabWidget(icon: "text.bubble.fill", title: "Posts", value: "\(group.boardPosts.count)")
+                tabWidget(icon: "text.bubble.fill", title: "Posts", value: "\(currentGroup.boardPosts.count)")
                 tabWidget(icon: "checklist", title: "Polls", value: "\(boardPollCount)")
                 tabWidget(icon: "ellipsis.bubble.fill", title: "Comments", value: "\(boardCommentCount)")
             }
             .padding(.horizontal)
 
-            if group.boardPosts.isEmpty {
+            if currentGroup.boardPosts.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "bubble.left.and.bubble.right")
                         .font(.system(size: 44))
@@ -550,7 +610,7 @@ struct GroupDetailView: View {
                 }
                 .padding(.top, 60)
             } else {
-                ForEach(group.boardPosts) { post in
+                ForEach(currentGroup.boardPosts) { post in
                     BoardPostCard(
                         post: post,
                         theme: theme,
