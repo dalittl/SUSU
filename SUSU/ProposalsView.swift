@@ -149,14 +149,22 @@ struct ProposalCard: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(proposal.title)
                         .font(.headline).bold()
+                    Text("Help moment")
+                        .font(.caption2)
+                        .foregroundColor(theme.secondary)
                     Text("By \(proposal.proposedBy)")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
                 Spacer()
-                Text(proposal.amount.asCurrency)
-                    .font(.title3).bold()
-                    .foregroundColor(theme.primary)
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("\(proposal.amount.asCurrency)")
+                        .font(.title3).bold()
+                        .foregroundColor(theme.primary)
+                    Text("goal")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
             }
 
             // Photo strip
@@ -227,6 +235,16 @@ struct ProposalCard: View {
                 }
             }
 
+            HStack(spacing: 8) {
+                Image(systemName: "bubble.left.and.bubble.right.fill")
+                    .font(.caption)
+                    .foregroundColor(theme.secondary)
+                Text("Conversation stays open until trustees align.")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(.top, 2)
+
             // Vote buttons
             if proposal.status == .pending && !hasVoted {
                 HStack(spacing: 12) {
@@ -264,9 +282,9 @@ struct ProposalCard: View {
             }
         }
         .padding(16)
-        .background(theme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: theme.primary.opacity(0.08), radius: 8, x: 0, y: 4)
+        .background(theme.cardBackground.opacity(0.84))
+        .cornerRadius(28)
+        .shadow(color: theme.primary.opacity(0.1), radius: 14, x: 0, y: 6)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
                 onDelete()

@@ -4,7 +4,6 @@
 //
 
 import SwiftUI
-import Charts
 
 struct HomeView: View {
     @EnvironmentObject var appState: AppState
@@ -13,21 +12,21 @@ struct HomeView: View {
     @State private var showPropose = false
     @State private var showWithdraw = false
     @State private var showInvite = false
-    @State private var walletVisible = false
 
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
                 theme.background.ignoresSafeArea()
+                ambientBlobBackground
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         heroHeader
-                            .padding(.bottom, 24)
+                            .padding(.bottom, 18)
 
                         VStack(spacing: 22) {
                             quickActions
-                            chartsDashboard
+                            organicGrowthSection
                             recentActivitySection
                             Spacer(minLength: 40)
                         }
@@ -53,275 +52,132 @@ struct HomeView: View {
             .navigationDestination(isPresented: $showInvite) {
                 InviteView(theme: theme)
             }
-            .onAppear {
-                withAnimation(.spring(response: 0.7, dampingFraction: 0.8).delay(0.2)) {
-                    walletVisible = true
-                }
-            }
         }
+    }
+
+    var ambientBlobBackground: some View {
+        ZStack {
+            Circle()
+                .fill(theme.secondary.opacity(0.14))
+                .frame(width: 280, height: 280)
+                .blur(radius: 40)
+                .offset(x: -120, y: -280)
+            Circle()
+                .fill(theme.primary.opacity(0.16))
+                .frame(width: 360, height: 360)
+                .blur(radius: 55)
+                .offset(x: 160, y: -180)
+            Circle()
+                .fill(theme.primary.opacity(0.1))
+                .frame(width: 220, height: 220)
+                .blur(radius: 30)
+                .offset(x: -80, y: 120)
+        }
+        .allowsHitTesting(false)
     }
 
     // MARK: - Hero Header
 
     var heroHeader: some View {
-        ZStack(alignment: .bottom) {
-            // Full-bleed gradient background
-            LinearGradient(
-                colors: [theme.primary, theme.secondary, theme.primary.opacity(0.7)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
-            )
-            .ignoresSafeArea(edges: .top)
-
-            // Decorative circles
-            GeometryReader { geo in
-                ZStack {
-                    Circle()
-                        .fill(.white.opacity(0.06))
-                        .frame(width: 260, height: 260)
-                        .offset(x: geo.size.width - 80, y: -60)
-                    Circle()
-                        .fill(.white.opacity(0.05))
-                        .frame(width: 180, height: 180)
-                        .offset(x: -40, y: 20)
-                    Circle()
-                        .fill(.white.opacity(0.04))
-                        .frame(width: 120, height: 120)
-                        .offset(x: geo.size.width * 0.4, y: geo.size.height * 0.1)
-                }
+        VStack(spacing: 22) {
+            HStack {
+                Text("Good \(greeting)")
+                    .font(.subheadline)
+                    .foregroundColor(.secondary)
+                Spacer()
+                Circle()
+                    .fill(theme.primary.opacity(0.2))
+                    .frame(width: 40, height: 40)
+                    .overlay(Text("DL").font(.caption).bold().foregroundColor(theme.primary))
             }
-            .frame(height: 260)
 
-            // Content
-            VStack(spacing: 0) {
-                // Top bar
-                HStack(alignment: .center) {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Good \(greeting) 👋")
-                            .font(.subheadline)
-                            .foregroundColor(.white.opacity(0.8))
-                        Text("Dante")
-                            .font(.system(size: 26, weight: .black))
-                            .foregroundColor(.white)
-                    }
-                    Spacer()
-                    // Avatar + notification dot
-                    ZStack(alignment: .topTrailing) {
-                        Circle()
-                            .fill(.white.opacity(0.25))
-                            .frame(width: 46, height: 46)
-                            .overlay(Text("DL").font(.subheadline).bold().foregroundColor(.white))
-                        Circle()
-                            .fill(Color.yellow)
-                            .frame(width: 10, height: 10)
-                            .offset(x: 2, y: -2)
-                    }
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 16)
+            VStack(spacing: 8) {
+                Text(appState.totalPoolBalance.asCurrency)
+                    .font(.system(size: 56, weight: .black, design: .rounded))
+                    .foregroundColor(theme.primary)
+                    .contentTransition(.numericText())
+                Text("saved together")
+                    .font(.title3)
+                    .foregroundColor(.secondary)
+                Text("\(appState.groups.count) groups · \(appState.groups.reduce(0) { $0 + $1.members.count }) people contributing")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
 
-                Spacer(minLength: 20)
-
-                // Debit card
-                SUSUDebitCard(
-                    walletBalance: walletVisible ? appState.myWalletBalance : nil,
-                    pooledBalance: walletVisible ? appState.totalPoolBalance : nil,
-                    theme: theme
-                )
-                .padding(.horizontal, 16)
-
-                // Pill stats row
-                HStack(spacing: 10) {
-                    HeroPill(icon: "person.3.fill", value: "\(appState.groups.count)", label: "Groups")
-                    HeroPill(icon: "doc.text.fill", value: "\(appState.pendingProposals.count)", label: "Pending")
-                    HeroPill(icon: "checkmark.seal.fill",
-                             value: "\(appState.groups.flatMap(\.proposals).filter { $0.status == .approved }.count)",
-                             label: "Approved")
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 14)
-                .padding(.bottom, 28)
+            HStack(spacing: 10) {
+                HeroPill(icon: "person.3.fill", value: "\(appState.groups.count)", label: "Groups")
+                HeroPill(icon: "doc.text.fill", value: "\(appState.pendingProposals.count)", label: "Pending")
+                HeroPill(icon: "checkmark.seal.fill",
+                         value: "\(appState.groups.flatMap(\.proposals).filter { $0.status == .approved }.count)",
+                         label: "Approved")
             }
         }
-        .frame(minHeight: 310)
+        .padding(.horizontal, 20)
+        .padding(.top, 12)
     }
 
     // MARK: - Quick Actions
 
     var quickActions: some View {
         HStack(spacing: 10) {
-            HomeActionTile(icon: "plus.circle.fill", label: "Add\nFunds",
-                           gradient: [theme.primary, theme.primary.opacity(0.7)]) { showContribute = true }
-            HomeActionTile(icon: "lightbulb.fill", label: "New\nProposal",
-                           gradient: [theme.secondary, theme.secondary.opacity(0.7)]) { showPropose = true }
-            HomeActionTile(icon: "arrow.down.circle.fill", label: "Withdraw",
-                           gradient: [theme.accent, theme.accent.opacity(0.7)]) { showWithdraw = true }
-            HomeActionTile(icon: "person.badge.plus", label: "Invite\nMember",
-                           gradient: [theme.textSecondary, theme.textSecondary.opacity(0.7)]) { showInvite = true }
+            FloatingActionPill(icon: "plus.circle.fill", label: "Contribute", tint: theme.primary) { showContribute = true }
+            FloatingActionPill(icon: "checkmark.bubble.fill", label: "Vote", tint: theme.secondary) { showPropose = true }
+            FloatingActionPill(icon: "heart.circle.fill", label: "Send Help", tint: theme.accent) { showWithdraw = true }
+            FloatingActionPill(icon: "person.badge.plus", label: "Invite", tint: theme.textSecondary) { showInvite = true }
         }
     }
 
-    // MARK: - Charts Dashboard
+    // MARK: - Organic Growth
 
-    var chartsDashboard: some View {
+    var organicGrowthSection: some View {
         VStack(spacing: 14) {
-            HomeSection(title: "Pool Insights")
-            HStack(alignment: .top, spacing: 14) {
-                // Left — Donut: pool distribution
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Distribution")
-                        .font(.caption).bold()
+            HomeSection(title: "Growth")
+            ZStack {
+                RoundedRectangle(cornerRadius: 32)
+                    .fill(theme.cardBackground.opacity(0.78))
+                Circle()
+                    .fill(theme.primary.opacity(0.2))
+                    .frame(width: 220, height: 220)
+                    .blur(radius: 30)
+                Circle()
+                    .fill(theme.secondary.opacity(0.16))
+                    .frame(width: 140, height: 140)
+                    .blur(radius: 20)
+                    .offset(x: 70, y: -40)
+
+                VStack(spacing: 10) {
+                    Text("Your group just keeps blooming")
+                        .font(.headline)
+                    Text("Every contribution expands the ecosystem")
+                        .font(.caption)
                         .foregroundColor(.secondary)
 
-                    ZStack {
-                        Chart(appState.groups) { group in
-                            SectorMark(
-                                angle: .value("Pool", group.poolBalance),
-                                innerRadius: .ratio(0.58),
-                                angularInset: 2
-                            )
-                            .foregroundStyle(by: .value("Group", group.name))
-                            .cornerRadius(4)
-                        }
-                        .chartForegroundStyleScale([
-                            appState.groups.indices.contains(0) ? appState.groups[0].name : "": theme.primary,
-                            appState.groups.indices.contains(1) ? appState.groups[1].name : "": theme.secondary,
-                            appState.groups.indices.contains(2) ? appState.groups[2].name : "": theme.accent,
-                        ])
-                        .chartLegend(.hidden)
-                        .frame(height: 120)
-
-                        VStack(spacing: 1) {
-                            Text(appState.totalPoolBalance.asCurrency)
-                                .font(.system(size: 12, weight: .black))
-                                .foregroundColor(theme.primary)
-                            Text("total")
-                                .font(.system(size: 9))
-                                .foregroundColor(.secondary)
-                        }
-                    }
-
-                    // Custom legend
-                    VStack(alignment: .leading, spacing: 4) {
-                        ForEach(appState.groups.indices, id: \.self) { i in
-                            let group = appState.groups[i]
-                            let colors: [Color] = [theme.primary, theme.secondary, theme.accent]
-                            HStack(spacing: 6) {
-                                Circle()
-                                    .fill(colors[i % colors.count])
-                                    .frame(width: 7, height: 7)
-                                Text(group.name)
-                                    .font(.system(size: 10))
-                                    .foregroundColor(.secondary)
-                                    .lineLimit(1)
-                                Spacer()
-                                Text(group.poolBalance.asCurrency)
-                                    .font(.system(size: 10, weight: .semibold))
-                                    .foregroundColor(.primary)
-                            }
-                        }
+                    HStack(spacing: 22) {
+                        growthOrb(value: "\(appState.groups.count)", label: "circles")
+                        growthOrb(value: "\(appState.pendingProposals.count)", label: "votes")
+                        growthOrb(value: "\(appState.groups.flatMap(\.transactions).count)", label: "moments")
                     }
                 }
-                .padding(16)
-                .background(theme.cardBackground)
-                .cornerRadius(16)
-                .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
-                .frame(maxWidth: .infinity)
-
-                // Right — Bar: monthly contributions
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Contributions")
-                        .font(.caption).bold()
-                        .foregroundColor(.secondary)
-                    let months = ["D", "J", "F", "M", "A", "M"]
-                    let values = appState.currentUser.monthlyContributions
-                    Chart(Array(zip(months, values)), id: \.0) { month, val in
-                        BarMark(
-                            x: .value("Month", month),
-                            y: .value("Amount", val)
-                        )
-                        .foregroundStyle(
-                            LinearGradient(colors: [theme.primary, theme.secondary],
-                                           startPoint: .bottom, endPoint: .top)
-                        )
-                        .cornerRadius(5)
-                        .annotation(position: .top) {
-                            if val == (values.max() ?? 0) {
-                                Image(systemName: "star.fill")
-                                    .font(.system(size: 7))
-                                    .foregroundColor(theme.accent)
-                            }
-                        }
-                    }
-                    .chartYAxis(.hidden)
-                    .chartXAxis {
-                        AxisMarks(values: .automatic) { _ in
-                            AxisValueLabel().font(.system(size: 9))
-                        }
-                    }
-                    .frame(height: 130)
-                }
-                .padding(16)
-                .background(theme.cardBackground)
-                .cornerRadius(16)
-                .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
-                .frame(maxWidth: .infinity)
-            }
-
-            // Full-width line chart — 6-month wallet growth
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Savings Growth")
-                        .font(.caption).bold()
-                        .foregroundColor(.secondary)
-                    Spacer()
-                    Text("6 months")
-                        .font(.caption2)
-                        .foregroundColor(.secondary.opacity(0.7))
-                }
-                let months = ["Dec", "Jan", "Feb", "Mar", "Apr", "May"]
-                let values = appState.currentUser.monthlyContributions
-                let cumulative: [Double] = values.indices.map { i in
-                    values[0...i].reduce(0, +)
-                }
-                Chart(Array(zip(months, cumulative)), id: \.0) { month, val in
-                    AreaMark(
-                        x: .value("Month", month),
-                        y: .value("Saved", val)
-                    )
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [theme.primary.opacity(0.35), theme.primary.opacity(0.0)],
-                            startPoint: .top, endPoint: .bottom
-                        )
-                    )
-                    .interpolationMethod(.catmullRom)
-                    LineMark(
-                        x: .value("Month", month),
-                        y: .value("Saved", val)
-                    )
-                    .foregroundStyle(theme.primary)
-                    .lineStyle(StrokeStyle(lineWidth: 2.5))
-                    .interpolationMethod(.catmullRom)
-                    PointMark(
-                        x: .value("Month", month),
-                        y: .value("Saved", val)
-                    )
-                    .foregroundStyle(theme.primary)
-                    .symbolSize(30)
-                }
-                .chartYAxis(.hidden)
-                .chartXAxis {
-                    AxisMarks(values: .automatic) { _ in
-                        AxisValueLabel().font(.system(size: 10))
-                    }
-                }
-                .frame(height: 90)
+                .padding(20)
             }
             .padding(16)
-            .background(theme.cardBackground)
-            .cornerRadius(16)
-            .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
+            .background(theme.cardBackground.opacity(0.7))
+            .cornerRadius(34)
+            .shadow(color: theme.primary.opacity(0.1), radius: 18, x: 0, y: 8)
+        }
+    }
+
+    private func growthOrb(value: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Circle()
+                .fill(LinearGradient(colors: [theme.primary.opacity(0.4), theme.secondary.opacity(0.2)], startPoint: .topLeading, endPoint: .bottomTrailing))
+                .frame(width: 46, height: 46)
+                .overlay(Circle().stroke(theme.primary.opacity(0.2), lineWidth: 1))
+            Text(value)
+                .font(.subheadline).bold()
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.secondary)
         }
     }
 
@@ -380,6 +236,36 @@ struct HeroPill: View {
         .padding(.vertical, 6)
         .background(.white.opacity(0.15))
         .cornerRadius(20)
+    }
+}
+
+struct FloatingActionPill: View {
+    let icon: String
+    let label: String
+    let tint: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 7) {
+                Image(systemName: icon)
+                    .font(.subheadline)
+                Text(label)
+                    .font(.subheadline).bold()
+            }
+            .foregroundColor(tint)
+            .padding(.horizontal, 14)
+            .padding(.vertical, 11)
+            .frame(maxWidth: .infinity)
+            .background(.ultraThinMaterial)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24)
+                    .stroke(tint.opacity(0.2), lineWidth: 1)
+            )
+            .cornerRadius(24)
+            .shadow(color: tint.opacity(0.12), radius: 10, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
     }
 }
 

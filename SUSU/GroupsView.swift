@@ -99,9 +99,9 @@ struct GroupsView: View {
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 10)
-        .background(theme.cardBackground)
-        .cornerRadius(12)
+        .padding(.vertical, 12)
+        .background(theme.cardBackground.opacity(0.85))
+        .cornerRadius(20)
     }
 }
 
@@ -212,15 +212,15 @@ struct GroupCard: View {
         .padding(16)
         .background(
             LinearGradient(
-                colors: [theme.cardBackground, theme.primary.opacity(0.03)],
+                colors: [theme.cardBackground.opacity(0.9), theme.primary.opacity(0.06)],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
         )
-        .cornerRadius(16)
-        .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
+        .cornerRadius(30)
+        .shadow(color: theme.primary.opacity(0.1), radius: 18, x: 0, y: 8)
         .overlay(
-            RoundedRectangle(cornerRadius: 16)
+            RoundedRectangle(cornerRadius: 30)
                 .stroke(theme.primary.opacity(0.14), lineWidth: 1)
         )
     }
@@ -281,6 +281,24 @@ struct GroupDetailView: View {
 
     private var boardPollCount: Int { currentGroup.boardPosts.filter { $0.type == .poll }.count }
     private var boardCommentCount: Int { currentGroup.boardPosts.reduce(0) { $0 + $1.comments.count } }
+
+    private func contributionStreak(_ member: GroupMember) -> Int {
+        member.monthlyContributions.reversed().prefix { $0 > 0 }.count
+    }
+
+    private func growthStage(_ member: GroupMember) -> String {
+        let total = member.totalContributed
+        if total > 700 { return "Blooming" }
+        if total > 350 { return "Growing" }
+        return "Sprouting"
+    }
+
+    private func growthEmoji(_ member: GroupMember) -> String {
+        let total = member.totalContributed
+        if total > 700 { return "🌳" }
+        if total > 350 { return "🌿" }
+        return "🌱"
+    }
 
     var body: some View {
         ZStack {
@@ -459,13 +477,25 @@ struct GroupDetailView: View {
                             Text(member.role.rawValue)
                                 .font(.caption)
                                 .foregroundColor(.secondary)
+
+                            HStack(spacing: 8) {
+                                Text("\(growthEmoji(member)) \(growthStage(member))")
+                                    .font(.caption2)
+                                    .foregroundColor(theme.primary)
+                                Text("\(contributionStreak(member)) month streak")
+                                    .font(.caption2)
+                                    .foregroundColor(.secondary)
+                                Text("showed up this month")
+                                    .font(.caption2)
+                                    .foregroundColor(theme.secondary)
+                            }
                         }
                         Spacer()
                         VStack(alignment: .trailing, spacing: 2) {
                             Text(member.walletBalance.asCurrency)
                                 .font(.subheadline).bold()
                                 .foregroundColor(theme.primary)
-                            Text("wallet")
+                            Text("helped fund \(Int(max(1, member.totalContributed / 90))) moments")
                                 .font(.caption2).foregroundColor(.secondary)
                         }
                         Image(systemName: "chevron.right")
