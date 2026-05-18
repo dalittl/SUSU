@@ -20,6 +20,9 @@ struct HomeView: View {
             ZStack(alignment: .top) {
                 theme.background.ignoresSafeArea()
 
+                // Extend hero gradient colour behind the Dynamic Island / status bar
+                theme.primary.ignoresSafeArea(edges: .top)
+
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         heroHeader
