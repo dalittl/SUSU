@@ -13,6 +13,14 @@ struct HomeView: View {
     @State private var showWithdraw = false
     @State private var showInvite = false
 
+    private var monthContributionCount: Int {
+        let cal = Calendar.current
+        return appState.groups
+            .flatMap(\.transactions)
+            .filter { $0.amount > 0 && cal.isDate($0.date, equalTo: Date(), toGranularity: .month) }
+            .count
+    }
+
     var body: some View {
         NavigationStack {
             ZStack(alignment: .top) {
@@ -119,7 +127,7 @@ struct HomeView: View {
     // MARK: - Quick Actions
 
     var quickActions: some View {
-        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+        HStack(spacing: 10) {
             FloatingActionPill(icon: "plus.circle.fill", label: "Contribute", tint: theme.primary) { showContribute = true }
             FloatingActionPill(icon: "checkmark.bubble.fill", label: "Vote", tint: theme.secondary) { showPropose = true }
             FloatingActionPill(icon: "heart.circle.fill", label: "Send Help", tint: theme.accent) { showWithdraw = true }
@@ -131,7 +139,7 @@ struct HomeView: View {
 
     var organicGrowthSection: some View {
         VStack(spacing: 14) {
-            HomeSection(title: "Growth")
+            HomeSection(title: "This Month")
             ZStack {
                 RoundedRectangle(cornerRadius: 32)
                     .fill(theme.cardBackground.opacity(0.78))
@@ -146,16 +154,16 @@ struct HomeView: View {
                     .offset(x: 70, y: -40)
 
                 VStack(spacing: 10) {
-                    Text("Your group just keeps blooming")
+                    Text("Your fund is moving steadily")
                         .font(.headline)
-                    Text("Every contribution expands the ecosystem")
+                    Text("Small, consistent contributions are building meaningful support.")
                         .font(.caption)
                         .foregroundColor(.secondary)
 
                     HStack(spacing: 22) {
-                        growthOrb(value: "\(appState.groups.count)", label: "circles")
-                        growthOrb(value: "\(appState.pendingProposals.count)", label: "votes")
-                        growthOrb(value: "\(appState.groups.flatMap(\.transactions).count)", label: "moments")
+                        growthOrb(value: appState.myWalletBalance.asCurrency, label: "wallet")
+                        growthOrb(value: "\(monthContributionCount)", label: "contributions")
+                        growthOrb(value: "\(appState.pendingProposals.count)", label: "pending votes")
                     }
                 }
                 .padding(20)
@@ -247,32 +255,32 @@ struct FloatingActionPill: View {
 
     var body: some View {
         Button(action: action) {
-            VStack(spacing: 8) {
+            HStack(spacing: 6) {
                 Circle()
                     .fill(tint.opacity(0.12))
-                    .frame(width: 34, height: 34)
+                    .frame(width: 24, height: 24)
                     .overlay(
                         Image(systemName: icon)
-                            .font(.subheadline)
+                            .font(.caption)
                             .foregroundColor(tint)
                     )
                 Text(label)
-                    .font(.subheadline).bold()
+                    .font(.caption).bold()
                     .foregroundColor(tint)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
-            .padding(.horizontal, 12)
-            .padding(.vertical, 14)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 8)
             .frame(maxWidth: .infinity)
-            .frame(height: 92)
+            .frame(height: 44)
             .background(.ultraThinMaterial.opacity(0.95))
             .overlay(
-                RoundedRectangle(cornerRadius: 30)
+                RoundedRectangle(cornerRadius: 16)
                     .stroke(tint.opacity(0.2), lineWidth: 1)
             )
-            .cornerRadius(30)
-            .shadow(color: tint.opacity(0.14), radius: 12, x: 0, y: 6)
+            .cornerRadius(16)
+            .shadow(color: tint.opacity(0.12), radius: 8, x: 0, y: 4)
         }
         .buttonStyle(.plain)
     }
