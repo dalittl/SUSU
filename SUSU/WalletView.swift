@@ -29,25 +29,37 @@ struct WalletView: View {
                     .padding(.top, -8)
                     .padding(.bottom, 16)
                 }
+
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Menu {
+                            Button { showContributeSheet = true } label: {
+                                Label("Contribute", systemImage: "plus.circle")
+                            }
+                            Button { showWithdrawSheet = true } label: {
+                                Label("Withdraw", systemImage: "arrow.down.circle")
+                            }
+                        } label: {
+                            Image(systemName: "ellipsis")
+                                .font(.title3.weight(.bold))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(
+                                    Circle()
+                                        .fill(LinearGradient(colors: [theme.primary, theme.secondary], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                )
+                                .shadow(color: theme.primary.opacity(0.28), radius: 14, x: 0, y: 8)
+                        }
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 26)
+                }
             }
             .navigationTitle("My Wallet")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(theme.primary.opacity(0.18), for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Menu {
-                        Button { showContributeSheet = true } label: {
-                            Label("Contribute", systemImage: "plus.circle")
-                        }
-                        Button { showWithdrawSheet = true } label: {
-                            Label("Withdraw", systemImage: "arrow.down.circle")
-                        }
-                    } label: {
-                        Image(systemName: "ellipsis.circle")
-                            .foregroundColor(theme.primary)
-                    }
-                }
-            }
             .navigationDestination(isPresented: $showContributeSheet) {
                 ContributeSheetView(theme: theme)
                     .environmentObject(appState)

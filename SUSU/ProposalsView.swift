@@ -60,20 +60,33 @@ struct ProposalsView: View {
                         }
                     }
                 }
+
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        Button {
+                            showNewProposal = true
+                        } label: {
+                            Image(systemName: "plus")
+                                .font(.title2.weight(.bold))
+                                .foregroundColor(.white)
+                                .frame(width: 56, height: 56)
+                                .background(
+                                    Circle()
+                                        .fill(LinearGradient(colors: [theme.primary, theme.secondary], startPoint: .topLeading, endPoint: .bottomTrailing))
+                                )
+                                .shadow(color: theme.primary.opacity(0.28), radius: 14, x: 0, y: 8)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.horizontal, 20)
+                    .padding(.bottom, 26)
+                }
             }
             .navigationTitle("Proposals")
             .navigationBarTitleDisplayMode(.inline)
             .toolbarBackground(theme.primary.opacity(0.18), for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    Button {
-                        showNewProposal = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .foregroundColor(theme.primary)
-                    }
-                }
-            }
             .navigationDestination(isPresented: $showNewProposal) {
                 NewProposalView(theme: theme, groups: appState.groups)
                     .environmentObject(appState)
