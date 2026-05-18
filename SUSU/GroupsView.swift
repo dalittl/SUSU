@@ -256,38 +256,63 @@ struct GroupDetailView: View {
 
     private let tabItems = ["Members", "Goals", "Activity", "Board"]
 
+    private var ownerCount: Int { group.members.filter { $0.role == .owner }.count }
+    private var trusteeCount: Int { group.members.filter { $0.role == .trustee }.count }
+    private var memberCount: Int { group.members.filter { $0.role == .member }.count }
+
+    private var totalGoalTarget: Double { group.goals.reduce(0) { $0 + $1.targetAmount } }
+    private var totalGoalCurrent: Double { group.goals.reduce(0) { $0 + $1.currentAmount } }
+    private var goalProgress: Double {
+        guard totalGoalTarget > 0 else { return 0 }
+        return min(totalGoalCurrent / totalGoalTarget, 1)
+    }
+
+    private var contributionTxCount: Int { group.transactions.filter { $0.amount > 0 }.count }
+    private var disbursementTxCount: Int { group.transactions.filter { $0.amount < 0 }.count }
+
+    private var boardPollCount: Int { group.boardPosts.filter { $0.type == .poll }.count }
+    private var boardCommentCount: Int { group.boardPosts.reduce(0) { $0 + $1.comments.count } }
+
     var body: some View {
-        VStack(spacing: 0) {
-            // Pool balance banner
-            ZStack {
-                LinearGradient(colors: [theme.primary, theme.secondary, theme.primary.opacity(0.85)],
-                               startPoint: .topLeading, endPoint: .bottomTrailing)
-                VStack(spacing: 8) {
-                    Text(group.poolBalance.asCurrency)
-                        .font(.system(size: 28, weight: .black)).foregroundColor(.white)
-                    Text("Pool Balance")
-                        .font(.caption).foregroundColor(.white.opacity(0.8))
+        ZStack {
+            theme.background.ignoresSafeArea()
 
-                    HStack(spacing: 10) {
-                        detailPill(icon: "person.3.fill", text: "\(group.members.count)")
-                        detailPill(icon: "target", text: "\(group.goals.count)")
-                        detailPill(icon: "bubble.left.and.bubble.right.fill", text: "\(group.boardPosts.count)")
+            VStack(spacing: 0) {
+                // Pool balance banner
+                ZStack {
+                    LinearGradient(colors: [theme.primary, theme.secondary, theme.primary.opacity(0.85)],
+                                   startPoint: .topLeading, endPoint: .bottomTrailing)
+                    VStack(spacing: 8) {
+                        Text(group.poolBalance.asCurrency)
+                            .font(.system(size: 28, weight: .black)).foregroundColor(.white)
+                        Text("Pool Balance")
+                            .font(.caption).foregroundColor(.white.opacity(0.82))
+
+                        HStack(spacing: 10) {
+                            detailPill(icon: "person.3.fill", text: "\(group.members.count)")
+                            detailPill(icon: "target", text: "\(group.goals.count)")
+                            detailPill(icon: "bubble.left.and.bubble.right.fill", text: "\(group.boardPosts.count)")
+                        }
                     }
+                    .padding(.vertical, 22)
                 }
-                .padding(.vertical, 22)
-            }
 
-            // Custom tab selector
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(Array(tabItems.enumerated()), id: \.offset) { index, title in
-                        Button {
-                            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
-                                selectedTab = index
-                            }
-                        } label: {
-                            Text(title)
-                                .font(.subheadline).fontWeight(selectedTab == index ? .bold : .semibold)
+                // Custom tab selector
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 8) {
+                        ForEach(Array(tabItems.enumerated()), id: \.offset) { index, title in
+                            Button {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                    selectedTab = index
+                                }
+                            } label: {
+                                HStack(spacing: 6) {
+                                    Image(systemName: tabIcon(for: index))
+                                        .font(.caption)
+                                    Text(title)
+                                        .font(.subheadline)
+                                        .fontWeight(selectedTab == index ? .bold : .semibold)
+                                }
                                 .foregroundColor(selectedTab == index ? .white : theme.primary)
                                 .padding(.horizontal, 14)
                                 .padding(.vertical, 9)
@@ -305,25 +330,33 @@ struct GroupDetailView: View {
                                             .fill(theme.primary.opacity(0.08))
                                     }
                                 }
+                            }
+                            .buttonStyle(.plain)
                         }
-                        .buttonStyle(.plain)
                     }
+                    .padding(.horizontal, 16)
                 }
-                .padding(.horizontal, 16)
-            }
-            .padding(.vertical, 8)
+                .padding(.vertical, 10)
 
-            ScrollView(showsIndicators: false) {
-                switch selectedTab {
-                case 0: membersTab
-                case 1: goalsTab
-                case 2: activityTab
-                default: boardTab
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 14) {
+                        switch selectedTab {
+                        case 0: membersTab
+                        case 1: goalsTab
+                        case 2: activityTab
+                        default: boardTab
+                        }
+                    }
+                    .padding(.top, 2)
+                    .padding(.bottom, 20)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.inline)
+        .toolbarBackground(theme.primary, for: .navigationBar)
+        .toolbarColorScheme(.dark, for: .navigationBar)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button("Done") { dismiss() }.foregroundColor(theme.primary)
@@ -334,6 +367,15 @@ struct GroupDetailView: View {
                 MemberProfileView(member: member, group: group)
                     .environment(\.theme, theme)
             }
+        }
+    }
+
+    private func tabIcon(for index: Int) -> String {
+        switch index {
+        case 0: return "person.2.fill"
+        case 1: return "target"
+        case 2: return "waveform.path.ecg"
+        default: return "bubble.left.and.bubble.right.fill"
         }
     }
 
@@ -353,6 +395,13 @@ struct GroupDetailView: View {
 
     var membersTab: some View {
         VStack(spacing: 10) {
+            HStack(spacing: 10) {
+                tabWidget(icon: "crown.fill", title: "Owners", value: "\(ownerCount)")
+                tabWidget(icon: "checkmark.shield.fill", title: "Trustees", value: "\(trusteeCount)")
+                tabWidget(icon: "person.fill", title: "Members", value: "\(memberCount)")
+            }
+            .padding(.horizontal)
+
             ForEach(group.members) { member in
                 Button {
                     selectedMember = member
@@ -385,16 +434,50 @@ struct GroupDetailView: View {
                     .padding(.vertical, 10)
                     .background(theme.cardBackground)
                     .cornerRadius(12)
+                    .overlay(
+                        RoundedRectangle(cornerRadius: 12)
+                            .stroke(theme.primary.opacity(0.1), lineWidth: 1)
+                    )
                     .padding(.horizontal)
                 }
                 .buttonStyle(.plain)
             }
         }
-        .padding(.top, 4)
     }
 
     var goalsTab: some View {
         VStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 10) {
+                HStack {
+                    Label("Goal Progress", systemImage: "chart.bar.fill")
+                        .font(.subheadline).bold()
+                    Spacer()
+                    Text("\(Int(goalProgress * 100))% funded")
+                        .font(.caption).bold()
+                        .foregroundColor(theme.primary)
+                }
+                ProgressView(value: goalProgress)
+                    .tint(theme.primary)
+                HStack {
+                    Text(totalGoalCurrent.asCurrency)
+                        .font(.caption).bold().foregroundColor(theme.primary)
+                    Text("of \(totalGoalTarget.asCurrency)")
+                        .font(.caption).foregroundColor(.secondary)
+                    Spacer()
+                    Text("\(group.goals.count) goals")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+            }
+            .padding(16)
+            .background(theme.cardBackground)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(theme.primary.opacity(0.1), lineWidth: 1)
+            )
+            .padding(.horizontal)
+
             ForEach(group.goals) { goal in
                 VStack(alignment: .leading, spacing: 10) {
                     HStack {
@@ -415,33 +498,64 @@ struct GroupDetailView: View {
                                 .font(.caption2).foregroundColor(.secondary)
                         }
                     }
+
+                    HStack(spacing: 6) {
+                        Image(systemName: "target")
+                            .font(.caption2)
+                            .foregroundColor(theme.primary)
+                        Text("Milestone tracking")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                    }
                 }
                 .padding(16)
                 .background(theme.cardBackground)
                 .cornerRadius(16)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 16)
+                        .stroke(theme.primary.opacity(0.1), lineWidth: 1)
+                )
                 .padding(.horizontal)
             }
         }
-        .padding(.top, 4)
     }
 
     var activityTab: some View {
-        VStack(spacing: 0) {
-            ForEach(group.transactions.sorted { $0.date > $1.date }) { tx in
-                TransactionRow(tx: tx, theme: theme)
-                Divider().padding(.leading, 52)
+        VStack(spacing: 14) {
+            HStack(spacing: 10) {
+                tabWidget(icon: "arrow.up.circle.fill", title: "Inflow", value: "\(contributionTxCount)")
+                tabWidget(icon: "arrow.down.circle.fill", title: "Outflow", value: "\(disbursementTxCount)")
+                tabWidget(icon: "clock.fill", title: "Total", value: "\(group.transactions.count)")
             }
+            .padding(.horizontal)
+
+            VStack(spacing: 0) {
+                ForEach(group.transactions.sorted { $0.date > $1.date }) { tx in
+                    TransactionRow(tx: tx, theme: theme)
+                    Divider().padding(.leading, 52)
+                }
+            }
+            .background(theme.cardBackground)
+            .cornerRadius(16)
+            .overlay(
+                RoundedRectangle(cornerRadius: 16)
+                    .stroke(theme.primary.opacity(0.1), lineWidth: 1)
+            )
+            .padding(.horizontal)
         }
-        .background(theme.cardBackground)
-        .cornerRadius(16)
-        .padding(.horizontal)
-        .padding(.top, 4)
     }
 
     // MARK: - Board Tab
 
     var boardTab: some View {
         VStack(spacing: 14) {
+            HStack(spacing: 10) {
+                tabWidget(icon: "text.bubble.fill", title: "Posts", value: "\(group.boardPosts.count)")
+                tabWidget(icon: "checklist", title: "Polls", value: "\(boardPollCount)")
+                tabWidget(icon: "ellipsis.bubble.fill", title: "Comments", value: "\(boardCommentCount)")
+            }
+            .padding(.horizontal)
+
             if group.boardPosts.isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "bubble.left.and.bubble.right")
@@ -470,10 +584,30 @@ struct GroupDetailView: View {
                     )
                 }
             }
-            Spacer(minLength: 20)
+            Spacer(minLength: 8)
         }
         .padding(.horizontal)
-        .padding(.top, 8)
+    }
+
+    private func tabWidget(icon: String, title: String, value: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(theme.primary)
+            Text(value)
+                .font(.subheadline).bold()
+            Text(title)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(theme.cardBackground)
+        .cornerRadius(12)
+        .overlay(
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(theme.primary.opacity(0.1), lineWidth: 1)
+        )
     }
 }
 
