@@ -51,6 +51,11 @@ struct GroupMember: Identifiable {
     var role: MemberRole
     var walletBalance: Double
     var colorHex: String
+    var totalContributed: Double
+    var joinedDate: Date
+    var bio: String
+    var monthlyContributions: [Double]  // last 6 months
+    var badges: [String]                // emoji badges
 
     enum MemberRole: String {
         case owner = "Owner"
@@ -130,11 +135,26 @@ extension SUSUGroup {
         name: "Little Family Fund",
         emoji: "👨‍👩‍👧‍👦",
         members: [
-            GroupMember(id: UUID(), name: "Dante (You)", initials: "DL", role: .owner, walletBalance: 142.80, colorHex: "#1B6CA8"),
-            GroupMember(id: UUID(), name: "Mom", initials: "ML", role: .trustee, walletBalance: 218.40, colorHex: "#2D6A4F"),
-            GroupMember(id: UUID(), name: "Dad", initials: "RL", role: .trustee, walletBalance: 190.00, colorHex: "#C84B31"),
-            GroupMember(id: UUID(), name: "Sister Tara", initials: "TL", role: .member, walletBalance: 87.20, colorHex: "#4A2FBD"),
-            GroupMember(id: UUID(), name: "Uncle James", initials: "JL", role: .member, walletBalance: 55.60, colorHex: "#BE185D"),
+            GroupMember(id: UUID(), name: "Dante (You)", initials: "DL", role: .owner, walletBalance: 142.80, colorHex: "#1B6CA8",
+                totalContributed: 620, joinedDate: Calendar.current.date(byAdding: .month, value: -4, to: Date())!,
+                bio: "Founder of the Little Family Fund. Building for the future together.",
+                monthlyContributions: [90, 110, 105, 120, 95, 100], badges: ["🏆", "⚡️", "💎"]),
+            GroupMember(id: UUID(), name: "Mom", initials: "ML", role: .trustee, walletBalance: 218.40, colorHex: "#2D6A4F",
+                totalContributed: 850, joinedDate: Calendar.current.date(byAdding: .month, value: -4, to: Date())!,
+                bio: "Heart of the family. Consistent contributor and trusted voice.",
+                monthlyContributions: [130, 145, 160, 155, 130, 130], badges: ["❤️", "🌟", "💎"]),
+            GroupMember(id: UUID(), name: "Dad", initials: "RL", role: .trustee, walletBalance: 190.00, colorHex: "#C84B31",
+                totalContributed: 760, joinedDate: Calendar.current.date(byAdding: .month, value: -4, to: Date())!,
+                bio: "Steady hand. Always shows up when it matters most.",
+                monthlyContributions: [120, 130, 120, 140, 110, 140], badges: ["🛡️", "💰"]),
+            GroupMember(id: UUID(), name: "Sister Tara", initials: "TL", role: .member, walletBalance: 87.20, colorHex: "#4A2FBD",
+                totalContributed: 320, joinedDate: Calendar.current.date(byAdding: .month, value: -3, to: Date())!,
+                bio: "New to the fund and growing fast!",
+                monthlyContributions: [40, 55, 60, 70, 45, 50], badges: ["🌱", "⚡️"]),
+            GroupMember(id: UUID(), name: "Uncle James", initials: "JL", role: .member, walletBalance: 55.60, colorHex: "#BE185D",
+                totalContributed: 210, joinedDate: Calendar.current.date(byAdding: .month, value: -2, to: Date())!,
+                bio: "Proud to support the family.",
+                monthlyContributions: [30, 40, 35, 45, 30, 30], badges: ["🤝"]),
         ],
         poolBalance: 694.00,
         goals: [
@@ -196,10 +216,22 @@ extension SUSUGroup {
         name: "The Crew",
         emoji: "🤝",
         members: [
-            GroupMember(id: UUID(), name: "Dante (You)", initials: "DL", role: .owner, walletBalance: 62.10, colorHex: "#1B6CA8"),
-            GroupMember(id: UUID(), name: "Marcus", initials: "MA", role: .trustee, walletBalance: 75.00, colorHex: "#2D6A4F"),
-            GroupMember(id: UUID(), name: "Priya", initials: "PK", role: .member, walletBalance: 50.30, colorHex: "#C84B31"),
-            GroupMember(id: UUID(), name: "Leo", initials: "LR", role: .member, walletBalance: 38.90, colorHex: "#4A2FBD"),
+            GroupMember(id: UUID(), name: "Dante (You)", initials: "DL", role: .owner, walletBalance: 62.10, colorHex: "#1B6CA8",
+                totalContributed: 280, joinedDate: Calendar.current.date(byAdding: .month, value: -3, to: Date())!,
+                bio: "Started The Crew to fund our (legendary) summer trip.",
+                monthlyContributions: [60, 70, 80, 65, 55, 50], badges: ["🏆", "✈️"]),
+            GroupMember(id: UUID(), name: "Marcus", initials: "MA", role: .trustee, walletBalance: 75.00, colorHex: "#2D6A4F",
+                totalContributed: 310, joinedDate: Calendar.current.date(byAdding: .month, value: -3, to: Date())!,
+                bio: "Always down for an adventure. Finance nerd in disguise.",
+                monthlyContributions: [70, 80, 75, 90, 80, 85], badges: ["🧠", "💰", "⚡️"]),
+            GroupMember(id: UUID(), name: "Priya", initials: "PK", role: .member, walletBalance: 50.30, colorHex: "#C84B31",
+                totalContributed: 210, joinedDate: Calendar.current.date(byAdding: .month, value: -2, to: Date())!,
+                bio: "Counting down the days till Vegas!",
+                monthlyContributions: [35, 40, 45, 50, 40, 0], badges: ["🌟", "🎉"]),
+            GroupMember(id: UUID(), name: "Leo", initials: "LR", role: .member, walletBalance: 38.90, colorHex: "#4A2FBD",
+                totalContributed: 165, joinedDate: Calendar.current.date(byAdding: .month, value: -2, to: Date())!,
+                bio: "Living for the weekend.",
+                monthlyContributions: [20, 30, 35, 40, 20, 20], badges: ["🌱"]),
         ],
         poolBalance: 226.30,
         goals: [
