@@ -15,6 +15,7 @@ struct WalletView: View {
         NavigationStack {
             ZStack {
                 theme.background.ignoresSafeArea()
+                walletAmbientBackground
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 20) {
@@ -29,6 +30,7 @@ struct WalletView: View {
             }
             .navigationTitle("My Wallet")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(theme.primary.opacity(0.18), for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Menu {
@@ -55,14 +57,45 @@ struct WalletView: View {
         }
     }
 
+    var walletAmbientBackground: some View {
+        ZStack {
+            Circle()
+                .fill(theme.primary.opacity(0.13))
+                .frame(width: 300, height: 300)
+                .blur(radius: 45)
+                .offset(x: -130, y: -280)
+            Circle()
+                .fill(theme.secondary.opacity(0.11))
+                .frame(width: 260, height: 260)
+                .blur(radius: 40)
+                .offset(x: 140, y: -180)
+            Circle()
+                .fill(theme.accent.opacity(0.08))
+                .frame(width: 220, height: 220)
+                .blur(radius: 30)
+                .offset(x: 70, y: 210)
+        }
+        .allowsHitTesting(false)
+    }
+
     // MARK: - Wallet Balance Card
 
     var walletBalanceCard: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 24)
-                .fill(LinearGradient(colors: [theme.primary, theme.secondary],
-                                     startPoint: .topLeading, endPoint: .bottomTrailing))
-                .shadow(color: theme.primary.opacity(0.3), radius: 16, x: 0, y: 8)
+            RoundedRectangle(cornerRadius: 30)
+                .fill(.ultraThinMaterial)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 30)
+                        .fill(
+                            LinearGradient(colors: [theme.primary.opacity(0.34), theme.secondary.opacity(0.2)],
+                                           startPoint: .topLeading, endPoint: .bottomTrailing)
+                        )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: 30)
+                        .stroke(theme.primary.opacity(0.24), lineWidth: 1)
+                )
+                .shadow(color: theme.primary.opacity(0.16), radius: 20, x: 0, y: 10)
 
             VStack(spacing: 8) {
                 Text("Your Wallet Balance")
@@ -99,7 +132,7 @@ struct WalletView: View {
                             .foregroundColor(theme.primary)
                             .padding(.horizontal, 20)
                             .padding(.vertical, 10)
-                            .background(.white)
+                                .background(.white.opacity(0.92))
                             .cornerRadius(20)
                     }
                     Button {
@@ -110,7 +143,7 @@ struct WalletView: View {
                             .foregroundColor(.white)
                             .padding(.horizontal, 20)
                             .padding(.vertical, 10)
-                            .background(.white.opacity(0.25))
+                            .background(.white.opacity(0.22))
                             .cornerRadius(20)
                     }
                 }
@@ -141,9 +174,13 @@ struct WalletView: View {
                 .tint(theme.primary)
         }
         .padding(16)
-        .background(theme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: theme.primary.opacity(0.07), radius: 6, x: 0, y: 3)
+        .background(theme.cardBackground.opacity(0.84))
+        .cornerRadius(28)
+        .overlay(
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(theme.primary.opacity(0.12), lineWidth: 1)
+        )
+        .shadow(color: theme.primary.opacity(0.1), radius: 12, x: 0, y: 6)
     }
 
     // MARK: - Contribution Chart (Bar)
@@ -176,9 +213,13 @@ struct WalletView: View {
             .padding(.bottom, 4)
         }
         .padding(16)
-        .background(theme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: theme.primary.opacity(0.07), radius: 6, x: 0, y: 3)
+        .background(theme.cardBackground.opacity(0.84))
+        .cornerRadius(28)
+        .overlay(
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(theme.primary.opacity(0.12), lineWidth: 1)
+        )
+        .shadow(color: theme.primary.opacity(0.1), radius: 12, x: 0, y: 6)
     }
 
     // MARK: - Group Breakdown
@@ -206,9 +247,13 @@ struct WalletView: View {
             }
         }
         .padding(16)
-        .background(theme.cardBackground)
-        .cornerRadius(16)
-        .shadow(color: theme.primary.opacity(0.07), radius: 6, x: 0, y: 3)
+        .background(theme.cardBackground.opacity(0.84))
+        .cornerRadius(28)
+        .overlay(
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(theme.primary.opacity(0.12), lineWidth: 1)
+        )
+        .shadow(color: theme.primary.opacity(0.1), radius: 12, x: 0, y: 6)
     }
 }
 

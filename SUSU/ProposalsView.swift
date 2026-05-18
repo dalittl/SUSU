@@ -23,6 +23,7 @@ struct ProposalsView: View {
         NavigationStack {
             ZStack {
                 theme.background.ignoresSafeArea()
+                proposalsAmbientBackground
 
                 VStack(spacing: 0) {
                     filterBar
@@ -59,6 +60,7 @@ struct ProposalsView: View {
             }
             .navigationTitle("Proposals")
             .navigationBarTitleDisplayMode(.large)
+            .toolbarBackground(theme.primary.opacity(0.18), for: .navigationBar)
             .toolbar {
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -74,6 +76,27 @@ struct ProposalsView: View {
                     .environmentObject(appState)
             }
         }
+    }
+
+    var proposalsAmbientBackground: some View {
+        ZStack {
+            Circle()
+                .fill(theme.primary.opacity(0.13))
+                .frame(width: 300, height: 300)
+                .blur(radius: 45)
+                .offset(x: -120, y: -260)
+            Circle()
+                .fill(theme.secondary.opacity(0.1))
+                .frame(width: 260, height: 260)
+                .blur(radius: 40)
+                .offset(x: 130, y: -170)
+            Circle()
+                .fill(theme.accent.opacity(0.08))
+                .frame(width: 210, height: 210)
+                .blur(radius: 30)
+                .offset(x: -80, y: 260)
+        }
+        .allowsHitTesting(false)
     }
 
     var filterBar: some View {
@@ -110,9 +133,13 @@ struct FilterChip: View {
                 .font(.subheadline).fontWeight(isSelected ? .bold : .regular)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 7)
-                .background(isSelected ? theme.primary : theme.primary.opacity(0.1))
+                .background(isSelected ? theme.primary : theme.cardBackground.opacity(0.8))
                 .foregroundColor(isSelected ? .white : theme.primary)
                 .cornerRadius(20)
+                .overlay(
+                    RoundedRectangle(cornerRadius: 20)
+                        .stroke(theme.primary.opacity(isSelected ? 0 : 0.18), lineWidth: 1)
+                )
         }
     }
 }
@@ -284,7 +311,11 @@ struct ProposalCard: View {
         .padding(16)
         .background(theme.cardBackground.opacity(0.84))
         .cornerRadius(28)
-        .shadow(color: theme.primary.opacity(0.1), radius: 14, x: 0, y: 6)
+        .overlay(
+            RoundedRectangle(cornerRadius: 28)
+                .stroke(theme.primary.opacity(0.12), lineWidth: 1)
+        )
+        .shadow(color: theme.primary.opacity(0.12), radius: 16, x: 0, y: 8)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {
                 onDelete()
