@@ -20,11 +20,6 @@ struct HomeView: View {
             ZStack(alignment: .top) {
                 theme.background.ignoresSafeArea()
 
-                // Color only the Dynamic Island / status bar strip to match the hero gradient
-                theme.primary
-                    .frame(height: 0)
-                    .ignoresSafeArea(edges: .top)
-
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
                         heroHeader
@@ -41,6 +36,8 @@ struct HomeView: View {
                 }
             }
             .navigationBarHidden(true)
+            .toolbarBackground(theme.primary, for: .navigationBar)
+            .toolbarColorScheme(.dark, for: .navigationBar)
             .navigationDestination(isPresented: $showContribute) {
                 ContributeSheetView(theme: theme)
                     .environmentObject(appState)
