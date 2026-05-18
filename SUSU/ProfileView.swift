@@ -46,7 +46,7 @@ struct ProfileView: View {
                 DebitCardView(theme: theme)
             }
             .navigationDestination(isPresented: $showSportsbookSignup) {
-                SportsbookSignupView(theme: theme)
+                SportsSignupView(theme: theme)
             }
             .sheet(isPresented: $showPrivacy) { LegalContentView(title: "Privacy Policy", isTerms: false) }
             .sheet(isPresented: $showTerms) { LegalContentView(title: "Terms of Service", isTerms: true) }
@@ -167,8 +167,8 @@ struct ProfileView: View {
             SettingsNavRow(icon: "creditcard.fill", label: "SUSU Debit Card",
                            detail: "Plus Feature", color: theme.primary) { showDebitCard = true }
             Divider().padding(.leading, 52)
-            SettingsNavRow(icon: "person.text.rectangle.fill", label: "Sportsbook Sign-Up Demo",
-                           detail: "KYC Form", color: theme.secondary) { showSportsbookSignup = true }
+            SettingsNavRow(icon: "person.text.rectangle.fill", label: "Finance Sign-Up Demo",
+                           detail: "Simple onboarding", color: theme.secondary) { showSportsbookSignup = true }
         }
         .background(theme.cardBackground)
         .cornerRadius(16)
@@ -290,9 +290,9 @@ struct SettingsNavRow: View {
     }
 }
 
-// MARK: - Sportsbook Signup View
+// MARK: - Finance Signup View
 
-struct SportsbookSignupView: View {
+struct SportsSignupView: View {
     let theme: AppTheme
     @Environment(\.dismiss) var dismiss
 
@@ -347,7 +347,7 @@ struct SportsbookSignupView: View {
                 consentSection
 
                 Button {
-                    dismiss()
+        .navigationTitle("Open Account")
                 } label: {
                     Text("Create Account")
                         .font(.headline).bold()
@@ -357,81 +357,98 @@ struct SportsbookSignupView: View {
                         .background(canSubmit ? theme.primary : Color.gray.opacity(0.4))
                         .cornerRadius(14)
                 }
-                .disabled(!canSubmit)
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(LinearGradient(colors: [theme.primary, theme.secondary], startPoint: .topLeading, endPoint: .bottomTrailing))
+                    .frame(width: 36, height: 36)
+                    .overlay(Image(systemName: "banknote.fill").foregroundColor(.white).font(.subheadline))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Open your account")
+                        .font(.headline)
+                    Text("Quick, clear steps with plain language.")
+                        .font(.caption)
+                        .foregroundColor(.secondary)
+                }
             }
-            .padding()
-            .padding(.bottom, 20)
-        }
-        .background(theme.background.ignoresSafeArea())
+
+            Text("This demo asks for the same basics a finance app would usually need: who you are, how to reach you, where you live, and how to protect your account.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+                .fixedSize(horizontal: false, vertical: true)
         .navigationTitle("Create Account")
         .navigationBarTitleDisplayMode(.inline)
-        .toolbar {
-            ToolbarItem(placement: .navigationBarLeading) {
-                Button("Cancel") { dismiss() }.foregroundColor(theme.primary)
+        .padding(16)
+        .background(theme.cardBackground.opacity(0.86))
+        .cornerRadius(24)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(theme.primary.opacity(0.12), lineWidth: 1)
+        )
+        .shadow(color: theme.primary.opacity(0.08), radius: 10, x: 0, y: 4)
             }
         }
     }
-
-    var headerCard: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Label("Sportsbook Sign-Up", systemImage: "figure.run")
-                .font(.headline)
-            Text("Complete identity, address, and verification details to open an account.")
+        formCard(title: "Identity", detail: "Basic personal info") {
+            textField("Legal first name", text: $firstName)
+            textField("Legal last name", text: $lastName)
+            DatePicker("Date of birth", selection: $dateOfBirth, displayedComponents: .date)
+                .font(.subheadline)
+            textField("Tax ID last 4", text: $ssnLast4, keyboard: .numberPad, helper: "Use the last 4 digits only.")
                 .font(.caption)
                 .foregroundColor(.secondary)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(14)
-        .background(theme.cardBackground)
-        .cornerRadius(14)
+        formCard(title: "Contact", detail: "How we can reach you") {
+            textField("Email address", text: $email, keyboard: .emailAddress)
+            textField("Phone number", text: $phone, keyboard: .phonePad)
     }
 
     var identitySection: some View {
         formCard(title: "Identity") {
-            textField("First Name", text: $firstName)
-            textField("Last Name", text: $lastName)
-            DatePicker("Date of Birth", selection: $dateOfBirth, displayedComponents: .date)
+        formCard(title: "Home address", detail: "Where your account is linked") {
+            textField("Street address", text: $address1)
+            textField("City", text: $city)
                 .font(.subheadline)
-            textField("SSN (Last 4)", text: $ssnLast4, keyboard: .numberPad)
-        }
+                textField("State", text: $state)
+                textField("ZIP code", text: $zip, keyboard: .numberPad)
     }
 
     var contactSection: some View {
         formCard(title: "Contact") {
             textField("Email", text: $email, keyboard: .emailAddress)
-            textField("Phone Number", text: $phone, keyboard: .phonePad)
-        }
-    }
-
-    var addressSection: some View {
-        formCard(title: "Address") {
-            textField("Street Address", text: $address1)
-            textField("City", text: $city)
-            HStack(spacing: 10) {
-                textField("State", text: $state)
-                textField("ZIP", text: $zip, keyboard: .numberPad)
+        formCard(title: "Account", detail: "Login info") {
+            textField("Username", text: $username)
+            secureField("Password", text: $password, helper: "Use 8 or more characters.")
+            secureField("Confirm password", text: $confirmPassword)
+            textField("Referral code (optional)", text: $referralCode)
             }
         }
     }
 
-    var accountSection: some View {
-        formCard(title: "Account") {
-            textField("Username", text: $username)
-            SecureField("Password (8+ characters)", text: $password)
-                .padding(12)
+        formCard(title: "Security", detail: "Helps protect your account") {
+            Picker("Security question", selection: $securityQuestion) {
+                Text("What was your first pet's name?").tag("What was your first pet's name?")
+                Text("What city were you born in?").tag("What city were you born in?")
+                Text("What was your first school?").tag("What was your first school?")
                 .background(theme.primary.opacity(0.06))
                 .cornerRadius(10)
             SecureField("Confirm Password", text: $confirmPassword)
                 .padding(12)
-                .background(theme.primary.opacity(0.06))
+            textField("Security answer", text: $securityAnswer)
                 .cornerRadius(10)
             textField("Referral Code (Optional)", text: $referralCode)
         }
     }
-
-    var verificationSection: some View {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Upload government ID")
+                        .font(.subheadline)
+                    Text("Front and back")
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
         formCard(title: "Security") {
-            Picker("Security Question", selection: $securityQuestion) {
+                Text("Required")
                 Text("What was your first pet's name?").tag("What was your first pet's name?")
                 Text("What city were you born in?").tag("What city were you born in?")
                 Text("What was your first school?").tag("What was your first school?")
@@ -442,38 +459,68 @@ struct SportsbookSignupView: View {
             textField("Security Answer", text: $securityAnswer)
 
             HStack(spacing: 10) {
-                Image(systemName: "person.text.rectangle")
-                    .foregroundColor(theme.primary)
+        formCard(title: "Consent", detail: "A few final checks") {
+            Toggle("I confirm I’m old enough to open this account", isOn: $confirmedAge)
                 Text("Upload Government ID (front/back)")
-                    .font(.subheadline)
+            Toggle("Allow location checks", isOn: $allowedGeo)
                 Spacer()
-                Text("Required")
+            Toggle("Accept the terms and privacy policy", isOn: $agreedToTerms)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+            Toggle("Send helpful product updates", isOn: $receiveOffers)
             }
             .padding(12)
             .background(theme.primary.opacity(0.06))
             .cornerRadius(10)
-        }
-    }
+    func formCard<Content: View>(title: String, detail: String? = nil, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 12) {
 
     var consentSection: some View {
+            if let detail {
+                Text(detail)
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
         formCard(title: "Consent") {
             Toggle("I am 21+ and eligible to play", isOn: $confirmedAge)
                 .tint(theme.primary)
-            Toggle("Allow geolocation checks", isOn: $allowedGeo)
-                .tint(theme.primary)
-            Toggle("Accept terms & responsible gaming policy", isOn: $agreedToTerms)
+        .padding(16)
+        .background(theme.cardBackground.opacity(0.86))
+        .cornerRadius(24)
+        .overlay(
+            RoundedRectangle(cornerRadius: 24)
+                .stroke(theme.primary.opacity(0.1), lineWidth: 1)
+        )
+        .shadow(color: theme.primary.opacity(0.07), radius: 10, x: 0, y: 4)
                 .tint(theme.primary)
             Toggle("Receive promos and odds alerts", isOn: $receiveOffers)
-                .tint(theme.primary)
-        }
+    func textField(_ title: String, text: Binding<String>, keyboard: UIKeyboardType = .default, helper: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            TextField(title, text: text)
     }
 
     func formCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(.headline)
+            .padding(12)
+            .background(theme.primary.opacity(0.06))
+            .cornerRadius(10)
+            if let helper {
+                Text(helper)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    func secureField(_ title: String, text: Binding<String>, helper: String? = nil) -> some View {
+        VStack(alignment: .leading, spacing: 5) {
+            SecureField(title, text: text)
+                .padding(12)
+                .background(theme.primary.opacity(0.06))
+                .cornerRadius(10)
+            if let helper {
+                Text(helper)
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
             content()
         }
         .frame(maxWidth: .infinity, alignment: .leading)
