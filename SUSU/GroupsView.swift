@@ -13,19 +13,33 @@ struct GroupsView: View {
     @State private var showGroupDetail = false
     @State private var showCreateGroup = false
 
+    private var totalMembers: Int {
+        appState.groups.reduce(0) { $0 + $1.members.count }
+    }
+
     var body: some View {
         NavigationStack {
             ZStack {
                 theme.background.ignoresSafeArea()
 
                 ScrollView(showsIndicators: false) {
-                    VStack(spacing: 16) {
+                    VStack(spacing: 18) {
+                        HStack(spacing: 10) {
+                            overviewPill(icon: "person.3.fill", value: "\(totalMembers)", label: "Members")
+                            overviewPill(icon: "doc.text.fill", value: "\(appState.pendingProposals.count)", label: "Pending")
+                            overviewPill(icon: "dollarsign.circle.fill", value: appState.totalPoolBalance.asCurrency, label: "Pooled")
+                        }
+
                         ForEach(appState.groups) { group in
-                            GroupCard(group: group, theme: theme)
-                                .onTapGesture {
+                            Button {
+                                withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
                                     selectedGroup = group
                                     showGroupDetail = true
                                 }
+                            } label: {
+                                GroupCard(group: group, theme: theme)
+                            }
+                            .buttonStyle(.plain)
                         }
 
                         // Create Group Prompt
@@ -41,7 +55,7 @@ struct GroupsView: View {
                                     .foregroundColor(theme.primary)
                                 Spacer()
                             }
-                            .padding(18)
+                            .padding(16)
                             .background(theme.primary.opacity(0.06))
                             .cornerRadius(16)
                             .overlay(
@@ -71,6 +85,24 @@ struct GroupsView: View {
             }
         }
     }
+
+    private func overviewPill(icon: String, value: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption)
+                .foregroundColor(theme.primary)
+            Text(value)
+                .font(.caption).bold()
+                .lineLimit(1)
+            Text(label)
+                .font(.caption2)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 10)
+        .background(theme.cardBackground)
+        .cornerRadius(12)
+    }
 }
 
 // MARK: - Group Card
@@ -79,8 +111,12 @@ struct GroupCard: View {
     let group: SUSUGroup
     let theme: AppTheme
 
+    private var pendingCount: Int {
+        group.proposals.filter { $0.status == .pending }.count
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text(group.emoji)
                     .font(.system(size: 32))
@@ -102,13 +138,18 @@ struct GroupCard: View {
                         .foregroundColor(.secondary)
                 }
                 Spacer()
-                VStack(alignment: .trailing, spacing: 2) {
+                VStack(alignment: .trailing, spacing: 4) {
                     Text(group.poolBalance.asCurrency)
                         .font(.title3).bold()
                         .foregroundColor(theme.primary)
-                    Text("pool balance")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                    HStack(spacing: 5) {
+                        Text("pool")
+                            .font(.caption2)
+                            .foregroundColor(.secondary)
+                        Image(systemName: "chevron.right")
+                            .font(.caption2)
+                            .foregroundColor(theme.primary)
+                    }
                 }
             }
 
@@ -131,12 +172,17 @@ struct GroupCard: View {
                 Spacer()
 
                 // Pending badge
-                if group.proposals.filter({ $0.status == .pending }).count > 0 {
+                if pendingCount > 0 {
                     HStack(spacing: 4) {
                         Circle().fill(theme.accent).frame(width: 7, height: 7)
-                        Text("\(group.proposals.filter { $0.status == .pending }.count) pending")
+                        Text("\(pendingCount) pending")
                             .font(.caption).foregroundColor(theme.accent)
+                            .padding(.trailing, 2)
                     }
+                    .padding(.horizontal, 8)
+                    .padding(.vertical, 4)
+                    .background(theme.accent.opacity(0.12))
+                    .cornerRadius(99)
                 }
             }
 
@@ -156,11 +202,42 @@ struct GroupCard: View {
                         .tint(theme.primary)
                 }
             }
+
+            HStack(spacing: 10) {
+                metricTag(icon: "target", text: "\(group.goals.count) goals")
+                metricTag(icon: "bubble.left.and.bubble.right.fill", text: "\(group.boardPosts.count) posts")
+                metricTag(icon: "checkmark.circle.fill", text: "\(group.proposals.filter { $0.status == .approved }.count) approved")
+            }
         }
         .padding(16)
-        .background(theme.cardBackground)
+        .background(
+            LinearGradient(
+                colors: [theme.cardBackground, theme.primary.opacity(0.03)],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
+            )
+        )
         .cornerRadius(16)
         .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
+        .overlay(
+            RoundedRectangle(cornerRadius: 16)
+                .stroke(theme.primary.opacity(0.14), lineWidth: 1)
+        )
+    }
+
+    private func metricTag(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(text)
+                .font(.caption2)
+                .lineLimit(1)
+        }
+        .foregroundColor(theme.primary)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(theme.primary.opacity(0.08))
+        .cornerRadius(99)
     }
 }
 
@@ -175,31 +252,65 @@ struct GroupDetailView: View {
     @State private var selectedMember: GroupMember?
     @State private var showMemberProfile = false
     @State private var expandedComments: Set<UUID> = []
+    @Namespace private var tabSelectionAnimation
+
+    private let tabItems = ["Members", "Goals", "Activity", "Board"]
 
     var body: some View {
         VStack(spacing: 0) {
             // Pool balance banner
             ZStack {
-                LinearGradient(colors: [theme.primary, theme.secondary],
+                LinearGradient(colors: [theme.primary, theme.secondary, theme.primary.opacity(0.85)],
                                startPoint: .topLeading, endPoint: .bottomTrailing)
-                VStack(spacing: 4) {
+                VStack(spacing: 8) {
                     Text(group.poolBalance.asCurrency)
                         .font(.system(size: 28, weight: .black)).foregroundColor(.white)
                     Text("Pool Balance")
                         .font(.caption).foregroundColor(.white.opacity(0.8))
+
+                    HStack(spacing: 10) {
+                        detailPill(icon: "person.3.fill", text: "\(group.members.count)")
+                        detailPill(icon: "target", text: "\(group.goals.count)")
+                        detailPill(icon: "bubble.left.and.bubble.right.fill", text: "\(group.boardPosts.count)")
+                    }
                 }
                 .padding(.vertical, 22)
             }
 
-            // Tab picker
-            Picker("", selection: $selectedTab) {
-                Text("Members").tag(0)
-                Text("Goals").tag(1)
-                Text("Activity").tag(2)
-                Text("Board").tag(3)
+            // Custom tab selector
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: 8) {
+                    ForEach(Array(tabItems.enumerated()), id: \.offset) { index, title in
+                        Button {
+                            withAnimation(.spring(response: 0.35, dampingFraction: 0.82)) {
+                                selectedTab = index
+                            }
+                        } label: {
+                            Text(title)
+                                .font(.subheadline).fontWeight(selectedTab == index ? .bold : .semibold)
+                                .foregroundColor(selectedTab == index ? .white : theme.primary)
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 9)
+                                .background {
+                                    if selectedTab == index {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(
+                                                LinearGradient(colors: [theme.primary, theme.secondary],
+                                                               startPoint: .leading,
+                                                               endPoint: .trailing)
+                                            )
+                                            .matchedGeometryEffect(id: "tabSelection", in: tabSelectionAnimation)
+                                    } else {
+                                        RoundedRectangle(cornerRadius: 12)
+                                            .fill(theme.primary.opacity(0.08))
+                                    }
+                                }
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, 16)
             }
-            .pickerStyle(.segmented)
-            .padding(.horizontal, 16)
             .padding(.vertical, 8)
 
             ScrollView(showsIndicators: false) {
@@ -224,6 +335,20 @@ struct GroupDetailView: View {
                     .environment(\.theme, theme)
             }
         }
+    }
+
+    private func detailPill(icon: String, text: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.caption2)
+            Text(text)
+                .font(.caption2).bold()
+        }
+        .foregroundColor(.white)
+        .padding(.horizontal, 9)
+        .padding(.vertical, 5)
+        .background(.white.opacity(0.2))
+        .cornerRadius(99)
     }
 
     var membersTab: some View {
