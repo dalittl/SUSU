@@ -157,10 +157,10 @@ struct GroupCard: View {
                 }
             }
         }
-        .padding(18)
+        .padding(16)
         .background(theme.cardBackground)
-        .cornerRadius(18)
-        .shadow(color: theme.primary.opacity(0.09), radius: 10, x: 0, y: 4)
+        .cornerRadius(16)
+        .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
     }
 }
 
@@ -187,9 +187,8 @@ struct GroupDetailView: View {
                     Text("Pool Balance")
                         .font(.caption).foregroundColor(.white.opacity(0.8))
                 }
-                .padding(.vertical, 16)
+                .padding(.vertical, 22)
             }
-            .frame(height: 80)
 
             // Tab picker
             Picker("", selection: $selectedTab) {
@@ -198,7 +197,8 @@ struct GroupDetailView: View {
                 Text("Activity").tag(2)
             }
             .pickerStyle(.segmented)
-            .padding()
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
 
             ScrollView(showsIndicators: false) {
                 switch selectedTab {
@@ -207,7 +207,6 @@ struct GroupDetailView: View {
                 default: activityTab
                 }
             }
-            .frame(maxHeight: 380)
         }
         .navigationTitle(group.name)
         .navigationBarTitleDisplayMode(.inline)
@@ -289,9 +288,9 @@ struct GroupDetailView: View {
                         }
                     }
                 }
-                .padding(14)
+                .padding(16)
                 .background(theme.cardBackground)
-                .cornerRadius(14)
+                .cornerRadius(16)
                 .padding(.horizontal)
             }
         }
@@ -429,7 +428,7 @@ struct MemberProfileView: View {
 
     var body: some View {
         ScrollView(showsIndicators: false) {
-            VStack(spacing: 20) {
+            VStack(spacing: 16) {
 
                 // ── Avatar Hero ──────────────────────────────────────────
                 ZStack {

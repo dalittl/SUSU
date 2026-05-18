@@ -27,7 +27,7 @@ struct ProposalsView: View {
                 VStack(spacing: 0) {
                     filterBar
                         .padding(.horizontal)
-                        .padding(.bottom, 8)
+                        .padding(.vertical, 8)
 
                     if allProposals.isEmpty {
                         Spacer()
@@ -265,7 +265,7 @@ struct ProposalCard: View {
         }
         .padding(16)
         .background(theme.cardBackground)
-        .cornerRadius(18)
+        .cornerRadius(16)
         .shadow(color: theme.primary.opacity(0.08), radius: 8, x: 0, y: 4)
         .swipeActions(edge: .trailing, allowsFullSwipe: true) {
             Button(role: .destructive) {

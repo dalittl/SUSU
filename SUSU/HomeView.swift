@@ -117,7 +117,7 @@ struct HomeView: View {
                             .offset(x: 2, y: -2)
                     }
                 }
-                .padding(.horizontal, 22)
+                .padding(.horizontal, 20)
                 .padding(.top, 16)
 
                 Spacer(minLength: 20)
@@ -222,9 +222,9 @@ struct HomeView: View {
                         }
                     }
                 }
-                .padding(14)
+                .padding(16)
                 .background(theme.cardBackground)
-                .cornerRadius(18)
+                .cornerRadius(16)
                 .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
                 .frame(maxWidth: .infinity)
 
@@ -261,9 +261,9 @@ struct HomeView: View {
                     }
                     .frame(height: 130)
                 }
-                .padding(14)
+                .padding(16)
                 .background(theme.cardBackground)
-                .cornerRadius(18)
+                .cornerRadius(16)
                 .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
                 .frame(maxWidth: .infinity)
             }
@@ -318,9 +318,9 @@ struct HomeView: View {
                 }
                 .frame(height: 90)
             }
-            .padding(14)
+            .padding(16)
             .background(theme.cardBackground)
-            .cornerRadius(18)
+            .cornerRadius(16)
             .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
         }
     }
@@ -342,8 +342,8 @@ struct HomeView: View {
                 }
             }
             .background(theme.cardBackground)
-            .cornerRadius(18)
-            .shadow(color: theme.primary.opacity(0.07), radius: 10, x: 0, y: 4)
+            .cornerRadius(16)
+            .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
         }
     }
 
@@ -619,7 +619,6 @@ struct TransactionRow: View {
                 .fill(iconColor.opacity(0.12))
                 .frame(width: 38, height: 38)
                 .overlay(Image(systemName: iconName).foregroundColor(iconColor).font(.system(size: 16)))
-                .padding(.leading, 14)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(tx.description)
@@ -633,9 +632,9 @@ struct TransactionRow: View {
             Text((tx.amount >= 0 ? "+" : "") + tx.amount.asCurrency)
                 .font(.subheadline).bold()
                 .foregroundColor(tx.amount >= 0 ? theme.secondary : theme.primary)
-                .padding(.trailing, 14)
         }
-        .padding(.vertical, 10)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 12)
     }
 
     var iconName: String {
@@ -688,9 +687,9 @@ struct GoalCard: View {
         }
         .padding(14)
         .frame(width: 170)
-        .background(.white)
+        .background(theme.cardBackground)
         .cornerRadius(16)
-        .shadow(color: theme.primary.opacity(0.1), radius: 8, x: 0, y: 4)
+        .shadow(color: theme.primary.opacity(0.08), radius: 8, x: 0, y: 4)
     }
 }
 

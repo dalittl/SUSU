@@ -98,10 +98,10 @@ struct ProfileView: View {
 
     var yearInReview: some View {
         ZStack {
-            RoundedRectangle(cornerRadius: 18)
+            RoundedRectangle(cornerRadius: 16)
                 .fill(LinearGradient(colors: [theme.secondary.opacity(0.85), theme.primary],
                                      startPoint: .topLeading, endPoint: .bottomTrailing))
-                .shadow(color: theme.primary.opacity(0.25), radius: 10, x: 0, y: 5)
+                .shadow(color: theme.primary.opacity(0.2), radius: 8, x: 0, y: 4)
 
             HStack {
                 VStack(alignment: .leading, spacing: 6) {
