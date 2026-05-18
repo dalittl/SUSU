@@ -174,6 +174,7 @@ struct GroupDetailView: View {
     @State private var selectedTab = 0
     @State private var selectedMember: GroupMember?
     @State private var showMemberProfile = false
+    @State private var expandedComments: Set<UUID> = []
 
     var body: some View {
         VStack(spacing: 0) {
@@ -195,6 +196,7 @@ struct GroupDetailView: View {
                 Text("Members").tag(0)
                 Text("Goals").tag(1)
                 Text("Activity").tag(2)
+                Text("Board").tag(3)
             }
             .pickerStyle(.segmented)
             .padding(.horizontal, 16)
@@ -204,7 +206,8 @@ struct GroupDetailView: View {
                 switch selectedTab {
                 case 0: membersTab
                 case 1: goalsTab
-                default: activityTab
+                case 2: activityTab
+                default: boardTab
                 }
             }
         }
@@ -308,6 +311,259 @@ struct GroupDetailView: View {
         .cornerRadius(16)
         .padding(.horizontal)
         .padding(.top, 4)
+    }
+
+    // MARK: - Board Tab
+
+    var boardTab: some View {
+        VStack(spacing: 14) {
+            if group.boardPosts.isEmpty {
+                VStack(spacing: 12) {
+                    Image(systemName: "bubble.left.and.bubble.right")
+                        .font(.system(size: 44))
+                        .foregroundColor(theme.primary.opacity(0.35))
+                    Text("No posts yet")
+                        .font(.headline).foregroundColor(.secondary)
+                    Text("Be the first to share something with the group.")
+                        .font(.caption).foregroundColor(.secondary)
+                        .multilineTextAlignment(.center)
+                }
+                .padding(.top, 60)
+            } else {
+                ForEach(group.boardPosts) { post in
+                    BoardPostCard(
+                        post: post,
+                        theme: theme,
+                        isExpanded: expandedComments.contains(post.id),
+                        onToggleComments: {
+                            if expandedComments.contains(post.id) {
+                                expandedComments.remove(post.id)
+                            } else {
+                                expandedComments.insert(post.id)
+                            }
+                        }
+                    )
+                }
+            }
+            Spacer(minLength: 20)
+        }
+        .padding(.horizontal)
+        .padding(.top, 8)
+    }
+}
+
+// MARK: - Board Post Card
+
+struct BoardPostCard: View {
+    let post: BoardPost
+    let theme: AppTheme
+    let isExpanded: Bool
+    let onToggleComments: () -> Void
+
+    private var totalPollVotes: Int {
+        post.pollOptions.reduce(0) { $0 + $1.votes.count }
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 0) {
+
+            // ── Header ────────────────────────────────────────────────
+            HStack(spacing: 10) {
+                Circle()
+                    .fill(Color(hex: post.authorColorHex))
+                    .frame(width: 38, height: 38)
+                    .overlay(Text(post.authorInitials).font(.system(size: 12, weight: .bold)).foregroundColor(.white))
+
+                VStack(alignment: .leading, spacing: 1) {
+                    HStack(spacing: 6) {
+                        Text(post.author)
+                            .font(.subheadline).bold()
+                        if let emoji = post.pinnedEmoji {
+                            Text(emoji).font(.caption)
+                        }
+                        if post.type == .poll {
+                            Text("POLL")
+                                .font(.system(size: 9, weight: .heavy))
+                                .tracking(0.8)
+                                .padding(.horizontal, 6).padding(.vertical, 2)
+                                .background(theme.accent.opacity(0.15))
+                                .foregroundColor(theme.accent)
+                                .cornerRadius(5)
+                        }
+                    }
+                    Text(post.timestamp, style: .relative)
+                        .font(.caption2)
+                        .foregroundColor(.secondary)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.top, 14)
+
+            // ── Content ────────────────────────────────────────────────
+            Text(post.content)
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.horizontal, 14)
+                .padding(.top, 10)
+
+            // ── Poll Options ───────────────────────────────────────────
+            if post.type == .poll && !post.pollOptions.isEmpty {
+                VStack(spacing: 8) {
+                    ForEach(post.pollOptions) { option in
+                        PollOptionRow(option: option, totalVotes: totalPollVotes, theme: theme)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.top, 12)
+
+                Text("\(totalPollVotes) vote\(totalPollVotes == 1 ? "" : "s")")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+                    .padding(.horizontal, 14)
+                    .padding(.top, 4)
+            }
+
+            // ── Footer ─────────────────────────────────────────────────
+            HStack(spacing: 20) {
+                // Likes
+                HStack(spacing: 5) {
+                    Image(systemName: post.likes.contains("Dante (You)") ? "heart.fill" : "heart")
+                        .font(.subheadline)
+                        .foregroundColor(post.likes.contains("Dante (You)") ? .red : .secondary)
+                    Text("\(post.likes.count)")
+                        .font(.caption).foregroundColor(.secondary)
+                }
+
+                // Comments toggle
+                Button(action: onToggleComments) {
+                    HStack(spacing: 5) {
+                        Image(systemName: isExpanded ? "bubble.left.fill" : "bubble.left")
+                            .font(.subheadline)
+                            .foregroundColor(isExpanded ? theme.primary : .secondary)
+                        Text("\(post.comments.count)")
+                            .font(.caption)
+                            .foregroundColor(isExpanded ? theme.primary : .secondary)
+                    }
+                }
+                .buttonStyle(.plain)
+
+                Spacer()
+
+                // Who liked — stacked avatars
+                if !post.likes.isEmpty {
+                    HStack(spacing: -6) {
+                        ForEach(post.likes.prefix(3), id: \.self) { name in
+                            let initials = String(name.split(separator: " ").compactMap { $0.first }.prefix(2))
+                            Circle()
+                                .fill(Color.secondary.opacity(0.25))
+                                .frame(width: 20, height: 20)
+                                .overlay(Text(initials).font(.system(size: 7, weight: .bold)).foregroundColor(.primary))
+                        }
+                    }
+                }
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 12)
+
+            // ── Comments (expanded) ────────────────────────────────────
+            if isExpanded && !post.comments.isEmpty {
+                Divider().padding(.horizontal, 14)
+                VStack(spacing: 0) {
+                    ForEach(post.comments) { comment in
+                        HStack(alignment: .top, spacing: 10) {
+                            Circle()
+                                .fill(Color(hex: comment.authorColorHex))
+                                .frame(width: 28, height: 28)
+                                .overlay(Text(comment.authorInitials).font(.system(size: 9, weight: .bold)).foregroundColor(.white))
+
+                            VStack(alignment: .leading, spacing: 3) {
+                                HStack(spacing: 6) {
+                                    Text(comment.author)
+                                        .font(.caption).bold()
+                                    Text(comment.timestamp, style: .relative)
+                                        .font(.caption2)
+                                        .foregroundColor(.secondary)
+                                }
+                                Text(comment.text)
+                                    .font(.caption)
+                                    .fixedSize(horizontal: false, vertical: true)
+                                    .foregroundColor(.primary.opacity(0.85))
+                            }
+                            Spacer()
+                        }
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 10)
+                        if comment.id != post.comments.last?.id {
+                            Divider().padding(.leading, 52)
+                        }
+                    }
+                }
+                .background(theme.primary.opacity(0.03))
+                .animation(.easeInOut(duration: 0.2), value: isExpanded)
+            }
+        }
+        .background(theme.cardBackground)
+        .cornerRadius(16)
+        .shadow(color: theme.primary.opacity(0.07), radius: 8, x: 0, y: 4)
+    }
+}
+
+// MARK: - Poll Option Row
+
+struct PollOptionRow: View {
+    let option: PollOption
+    let totalVotes: Int
+    let theme: AppTheme
+
+    private var fraction: Double {
+        totalVotes > 0 ? Double(option.votes.count) / Double(totalVotes) : 0
+    }
+    private var isLeading: Bool {
+        option.votes.count > 0
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 5) {
+            HStack {
+                Text(option.text)
+                    .font(.caption).fontWeight(.medium)
+                    .lineLimit(2)
+                Spacer()
+                Text("\(option.votes.count)")
+                    .font(.caption2).bold()
+                    .foregroundColor(isLeading ? theme.primary : .secondary)
+            }
+
+            GeometryReader { geo in
+                ZStack(alignment: .leading) {
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(theme.primary.opacity(0.1))
+                        .frame(height: 6)
+                    RoundedRectangle(cornerRadius: 4)
+                        .fill(
+                            LinearGradient(colors: [theme.primary, theme.secondary],
+                                           startPoint: .leading, endPoint: .trailing)
+                        )
+                        .frame(width: max(4, geo.size.width * fraction), height: 6)
+                }
+            }
+            .frame(height: 6)
+
+            if !option.votes.isEmpty {
+                Text(option.votes.prefix(3).joined(separator: ", ") + (option.votes.count > 3 ? " +\(option.votes.count - 3)" : ""))
+                    .font(.system(size: 9))
+                    .foregroundColor(.secondary)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(isLeading ? theme.primary.opacity(0.06) : theme.cardBackground)
+        .cornerRadius(10)
+        .overlay(
+            RoundedRectangle(cornerRadius: 10)
+                .stroke(isLeading ? theme.primary.opacity(0.2) : Color.clear, lineWidth: 1)
+        )
     }
 }
 
