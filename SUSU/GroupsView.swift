@@ -632,7 +632,7 @@ struct CreateGroupView: View {
                                         badges: [])
                         ],
                         poolBalance: 0, goals: [], proposals: [], transactions: [],
-                        isPlusGroup: false, createdAt: Date()
+                        boardPosts: [], isPlusGroup: false, createdAt: Date()
                     )
                     appState.addGroup(newGroup)
                     dismiss()
