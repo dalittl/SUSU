@@ -16,6 +16,7 @@ struct ProfileView: View {
     @State private var showDebitCard = false
     @State private var showPrivacy = false
     @State private var showTerms = false
+    @State private var showSportsbookSignup = false
 
     var body: some View {
         NavigationStack {
@@ -43,6 +44,9 @@ struct ProfileView: View {
             }
             .navigationDestination(isPresented: $showDebitCard) {
                 DebitCardView(theme: theme)
+            }
+            .navigationDestination(isPresented: $showSportsbookSignup) {
+                SportsbookSignupView(theme: theme)
             }
             .sheet(isPresented: $showPrivacy) { LegalContentView(title: "Privacy Policy", isTerms: false) }
             .sheet(isPresented: $showTerms) { LegalContentView(title: "Terms of Service", isTerms: true) }
@@ -162,6 +166,9 @@ struct ProfileView: View {
             Divider().padding(.leading, 52)
             SettingsNavRow(icon: "creditcard.fill", label: "SUSU Debit Card",
                            detail: "Plus Feature", color: theme.primary) { showDebitCard = true }
+            Divider().padding(.leading, 52)
+            SettingsNavRow(icon: "person.text.rectangle.fill", label: "Sportsbook Sign-Up Demo",
+                           detail: "KYC Form", color: theme.secondary) { showSportsbookSignup = true }
         }
         .background(theme.cardBackground)
         .cornerRadius(16)
@@ -280,6 +287,209 @@ struct SettingsNavRow: View {
             .padding(.vertical, 12)
         }
         .buttonStyle(.plain)
+    }
+}
+
+// MARK: - Sportsbook Signup View
+
+struct SportsbookSignupView: View {
+    let theme: AppTheme
+    @Environment(\.dismiss) var dismiss
+
+    @State private var firstName = ""
+    @State private var lastName = ""
+    @State private var dateOfBirth = Calendar.current.date(byAdding: .year, value: -25, to: Date()) ?? Date()
+    @State private var email = ""
+    @State private var phone = ""
+    @State private var address1 = ""
+    @State private var city = ""
+    @State private var state = ""
+    @State private var zip = ""
+    @State private var ssnLast4 = ""
+    @State private var username = ""
+    @State private var password = ""
+    @State private var confirmPassword = ""
+    @State private var securityQuestion = "What was your first pet's name?"
+    @State private var securityAnswer = ""
+    @State private var referralCode = ""
+
+    @State private var agreedToTerms = false
+    @State private var confirmedAge = false
+    @State private var allowedGeo = false
+    @State private var receiveOffers = true
+
+    var canSubmit: Bool {
+        !firstName.isEmpty &&
+        !lastName.isEmpty &&
+        !email.isEmpty &&
+        !phone.isEmpty &&
+        !address1.isEmpty &&
+        !city.isEmpty &&
+        !state.isEmpty &&
+        !zip.isEmpty &&
+        ssnLast4.count == 4 &&
+        !username.isEmpty &&
+        password.count >= 8 &&
+        password == confirmPassword &&
+        !securityAnswer.isEmpty &&
+        agreedToTerms && confirmedAge && allowedGeo
+    }
+
+    var body: some View {
+        ScrollView {
+            VStack(spacing: 18) {
+                headerCard
+                identitySection
+                contactSection
+                addressSection
+                accountSection
+                verificationSection
+                consentSection
+
+                Button {
+                    dismiss()
+                } label: {
+                    Text("Create Account")
+                        .font(.headline).bold()
+                        .foregroundColor(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 15)
+                        .background(canSubmit ? theme.primary : Color.gray.opacity(0.4))
+                        .cornerRadius(14)
+                }
+                .disabled(!canSubmit)
+            }
+            .padding()
+            .padding(.bottom, 20)
+        }
+        .background(theme.background.ignoresSafeArea())
+        .navigationTitle("Create Account")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                Button("Cancel") { dismiss() }.foregroundColor(theme.primary)
+            }
+        }
+    }
+
+    var headerCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Label("Sportsbook Sign-Up", systemImage: "figure.run")
+                .font(.headline)
+            Text("Complete identity, address, and verification details to open an account.")
+                .font(.caption)
+                .foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(theme.cardBackground)
+        .cornerRadius(14)
+    }
+
+    var identitySection: some View {
+        formCard(title: "Identity") {
+            textField("First Name", text: $firstName)
+            textField("Last Name", text: $lastName)
+            DatePicker("Date of Birth", selection: $dateOfBirth, displayedComponents: .date)
+                .font(.subheadline)
+            textField("SSN (Last 4)", text: $ssnLast4, keyboard: .numberPad)
+        }
+    }
+
+    var contactSection: some View {
+        formCard(title: "Contact") {
+            textField("Email", text: $email, keyboard: .emailAddress)
+            textField("Phone Number", text: $phone, keyboard: .phonePad)
+        }
+    }
+
+    var addressSection: some View {
+        formCard(title: "Address") {
+            textField("Street Address", text: $address1)
+            textField("City", text: $city)
+            HStack(spacing: 10) {
+                textField("State", text: $state)
+                textField("ZIP", text: $zip, keyboard: .numberPad)
+            }
+        }
+    }
+
+    var accountSection: some View {
+        formCard(title: "Account") {
+            textField("Username", text: $username)
+            SecureField("Password (8+ characters)", text: $password)
+                .padding(12)
+                .background(theme.primary.opacity(0.06))
+                .cornerRadius(10)
+            SecureField("Confirm Password", text: $confirmPassword)
+                .padding(12)
+                .background(theme.primary.opacity(0.06))
+                .cornerRadius(10)
+            textField("Referral Code (Optional)", text: $referralCode)
+        }
+    }
+
+    var verificationSection: some View {
+        formCard(title: "Security") {
+            Picker("Security Question", selection: $securityQuestion) {
+                Text("What was your first pet's name?").tag("What was your first pet's name?")
+                Text("What city were you born in?").tag("What city were you born in?")
+                Text("What was your first school?").tag("What was your first school?")
+            }
+            .pickerStyle(.menu)
+            .tint(theme.primary)
+
+            textField("Security Answer", text: $securityAnswer)
+
+            HStack(spacing: 10) {
+                Image(systemName: "person.text.rectangle")
+                    .foregroundColor(theme.primary)
+                Text("Upload Government ID (front/back)")
+                    .font(.subheadline)
+                Spacer()
+                Text("Required")
+                    .font(.caption2)
+                    .foregroundColor(.secondary)
+            }
+            .padding(12)
+            .background(theme.primary.opacity(0.06))
+            .cornerRadius(10)
+        }
+    }
+
+    var consentSection: some View {
+        formCard(title: "Consent") {
+            Toggle("I am 21+ and eligible to play", isOn: $confirmedAge)
+                .tint(theme.primary)
+            Toggle("Allow geolocation checks", isOn: $allowedGeo)
+                .tint(theme.primary)
+            Toggle("Accept terms & responsible gaming policy", isOn: $agreedToTerms)
+                .tint(theme.primary)
+            Toggle("Receive promos and odds alerts", isOn: $receiveOffers)
+                .tint(theme.primary)
+        }
+    }
+
+    func formCard<Content: View>(title: String, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+            content()
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(14)
+        .background(theme.cardBackground)
+        .cornerRadius(14)
+    }
+
+    func textField(_ title: String, text: Binding<String>, keyboard: UIKeyboardType = .default) -> some View {
+        TextField(title, text: text)
+            .keyboardType(keyboard)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .padding(12)
+            .background(theme.primary.opacity(0.06))
+            .cornerRadius(10)
     }
 }
 
