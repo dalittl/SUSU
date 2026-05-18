@@ -31,7 +31,9 @@ struct ProfileView: View {
                         legalSection
                         Spacer(minLength: 30)
                     }
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.top, 4)
+                    .padding(.bottom, 16)
                 }
             }
             .navigationTitle("Profile")

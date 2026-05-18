@@ -25,7 +25,9 @@ struct WalletView: View {
                         groupBreakdown
                         Spacer(minLength: 30)
                     }
-                    .padding()
+                    .padding(.horizontal)
+                    .padding(.top, 4)
+                    .padding(.bottom, 16)
                 }
             }
             .navigationTitle("My Wallet")

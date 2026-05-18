@@ -28,7 +28,8 @@ struct ProposalsView: View {
                 VStack(spacing: 0) {
                     filterBar
                         .padding(.horizontal)
-                        .padding(.vertical, 8)
+                        .padding(.top, 2)
+                        .padding(.bottom, 6)
 
                     if allProposals.isEmpty {
                         Spacer()
@@ -53,7 +54,9 @@ struct ProposalsView: View {
                                 }
                                 Spacer(minLength: 30)
                             }
-                            .padding()
+                            .padding(.horizontal)
+                            .padding(.top, 4)
+                            .padding(.bottom, 16)
                         }
                     }
                 }
