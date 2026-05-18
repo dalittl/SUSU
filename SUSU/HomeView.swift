@@ -119,7 +119,7 @@ struct HomeView: View {
     // MARK: - Quick Actions
 
     var quickActions: some View {
-        HStack(spacing: 10) {
+        LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
             FloatingActionPill(icon: "plus.circle.fill", label: "Contribute", tint: theme.primary) { showContribute = true }
             FloatingActionPill(icon: "checkmark.bubble.fill", label: "Vote", tint: theme.secondary) { showPropose = true }
             FloatingActionPill(icon: "heart.circle.fill", label: "Send Help", tint: theme.accent) { showWithdraw = true }
@@ -247,23 +247,32 @@ struct FloatingActionPill: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 7) {
-                Image(systemName: icon)
-                    .font(.subheadline)
+            VStack(spacing: 8) {
+                Circle()
+                    .fill(tint.opacity(0.12))
+                    .frame(width: 34, height: 34)
+                    .overlay(
+                        Image(systemName: icon)
+                            .font(.subheadline)
+                            .foregroundColor(tint)
+                    )
                 Text(label)
                     .font(.subheadline).bold()
+                    .foregroundColor(tint)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.85)
             }
-            .foregroundColor(tint)
-            .padding(.horizontal, 14)
-            .padding(.vertical, 11)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 14)
             .frame(maxWidth: .infinity)
-            .background(.ultraThinMaterial)
+            .frame(height: 92)
+            .background(.ultraThinMaterial.opacity(0.95))
             .overlay(
-                RoundedRectangle(cornerRadius: 24)
+                RoundedRectangle(cornerRadius: 30)
                     .stroke(tint.opacity(0.2), lineWidth: 1)
             )
-            .cornerRadius(24)
-            .shadow(color: tint.opacity(0.12), radius: 10, x: 0, y: 4)
+            .cornerRadius(30)
+            .shadow(color: tint.opacity(0.14), radius: 12, x: 0, y: 6)
         }
         .buttonStyle(.plain)
     }
