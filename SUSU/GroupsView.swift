@@ -278,25 +278,6 @@ struct GroupDetailView: View {
             theme.background.ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Pool balance banner
-                ZStack {
-                    LinearGradient(colors: [theme.primary, theme.secondary, theme.primary.opacity(0.85)],
-                                   startPoint: .topLeading, endPoint: .bottomTrailing)
-                    VStack(spacing: 8) {
-                        Text(group.poolBalance.asCurrency)
-                            .font(.system(size: 28, weight: .black)).foregroundColor(.white)
-                        Text("Pool Balance")
-                            .font(.caption).foregroundColor(.white.opacity(0.82))
-
-                        HStack(spacing: 10) {
-                            detailPill(icon: "person.3.fill", text: "\(group.members.count)")
-                            detailPill(icon: "target", text: "\(group.goals.count)")
-                            detailPill(icon: "bubble.left.and.bubble.right.fill", text: "\(group.boardPosts.count)")
-                        }
-                    }
-                    .padding(.vertical, 22)
-                }
-
                 // Custom tab selector
                 ScrollView(.horizontal, showsIndicators: false) {
                     HStack(spacing: 8) {
